@@ -6,6 +6,7 @@
 #include "tensor/traits.h"
 
 namespace tensor {
+namespace cpu {
 
 template <typename Op>
 struct Loop2d {
@@ -42,6 +43,7 @@ struct Loop2d {
   }
 };
   
+} // namespace cpu
 } // namespace tensor
 
 

@@ -36,7 +36,7 @@ std::vector<size_t> concat_strides(std::vector<std::vector<size_t>> v) {
 }
 
 // TODO: non-contiguous tensor test
-TEST(TestLoop, TestLoop2d) {
+TEST(TestLoop, TestCPULoop2d) {
   // shape: (2, 3, 2), numel = 12
   std::vector<int> a_vec(12);
   std::vector<float> b_vec(12);
@@ -72,7 +72,7 @@ TEST(TestLoop, TestLoop2d) {
   std::vector<size_t> concat_stride = concat_strides({
     o_stride, a_stride, b_stride, c_stride});
   
-  tensor::Loop2d loop([](int a, float b, size_t c) -> float {return a + b + c; });
+  tensor::cpu::Loop2d loop([](int a, float b, size_t c) -> float {return a + b + c; });
   loop(datas.data(), stride_2d.data(), 2, 3);
   for (size_t i = 0; i < datas.size(); ++i) {
     datas[i] += concat_stride[i];
