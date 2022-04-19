@@ -17,19 +17,30 @@ std::shared_ptr<TensorStorage> TensorStorage::AllocStorage(
   return std::make_shared<TensorStorage>(dptr, size, align, device);
 }
 
-std::vector<size_t> Tensor::shape() const {
-  std::vector<size_t> outShape(numAxis_, 0);
-  std::copy_n(shape_.cbegin(), numAxis_, outShape.begin());
-  return outShape;
+TensorShapeInfo::TensorShapeInfo(const std::vector<size_t>& shape,
+                                 const std::vector<size_t>& stride)
+  : numAxis_(shape.size()) {
+  CHECK_LE(shape.size(), kMaxTensorAxis) << "Input shape dimension out of range\n";
+  CHECK_EQ(shape.size(), stride.size()) << "The number of dimension of"
+                                        << "shape and stride should be equal\n";
+  
+  std::copy_n(shape.begin(), numAxis_, shape_.begin());
+  std::copy_n(stride.begin(), numAxis_, stride_.begin());
 }
 
-std::vector<size_t> Tensor::stride() const {
-  std::vector<size_t> outStride(numAxis_, 0);
-  std::copy_n(stride_.cbegin(), numAxis_, outStride.begin());
-  return outStride;
+std::vector<size_t> TensorShapeInfo::shape() const {
+  std::vector<size_t> out_shape(numAxis_, 0);
+  std::copy_n(shape_.cbegin(), numAxis_, out_shape.begin());
+  return out_shape;
 }
 
-bool Tensor::IsContiguous() const {
+std::vector<size_t> TensorShapeInfo::stride() const {
+  std::vector<size_t> out_stride(numAxis_, 0);
+  std::copy_n(stride_.cbegin(), numAxis_, out_stride.begin());
+  return out_stride;
+}
+
+bool TensorShapeInfo::IsContiguous() const {
   if (numAxis_ == 0) return true; // scalar or what?
   size_t s = 1;
   for (size_t i = numAxis_ - 1; i < numAxis_; --i) {
@@ -42,7 +53,7 @@ bool Tensor::IsContiguous() const {
   return true;
 }
 
-std::vector<size_t> Tensor::GenerateContiguousStride(std::vector<size_t> shape) {
+std::vector<size_t> TensorShapeInfo::GenerateContiguousStride(std::vector<size_t> shape) {
   size_t numAxis = shape.size();
   std::vector<size_t> stride(numAxis, 1);
   for (size_t i = numAxis - 2; i < numAxis; --i) {

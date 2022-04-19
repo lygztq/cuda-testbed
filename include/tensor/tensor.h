@@ -10,6 +10,10 @@
 
 namespace tensor {
 
+// forward decl
+class TENSOR_DLL Tensor;
+class TENSOR_DLL TensorRef;
+
 constexpr size_t kMaxTensorAxis = 16;
 
 class TENSOR_DLL TensorStorage final {
@@ -66,26 +70,71 @@ private:
   Device device_;
 };
 
+class TENSOR_DLL TensorShapeInfo final {
+  friend Tensor;
+  friend TensorRef;
+
+public:
+  TensorShapeInfo() = default;
+  explicit TensorShapeInfo(
+    const std::vector<size_t>& shape, const std::vector<size_t>& stride);
+  
+  // argument getters
+  size_t num_axis() const { return numAxis_; }
+  size_t shape(size_t i) const { return shape_[i]; }
+  std::vector<size_t> shape() const;
+  const std::array<size_t, kMaxTensorAxis>& shape_const_ref() const { return shape_; }
+  size_t stride(size_t i) const { return stride_[i]; }
+  std::vector<size_t> stride() const;
+  const std::array<size_t, kMaxTensorAxis>& stride_const_ref() const { return stride_; }
+
+  bool IsContiguous() const;
+  static std::vector<size_t> GenerateContiguousStride(std::vector<size_t> shape);
+
+private:
+  size_t numAxis_;
+  std::array<size_t, kMaxTensorAxis> shape_;
+  std::array<size_t, kMaxTensorAxis> stride_;
+};
+
+#define DECLARE_SHAPE_INFO \
+private: \
+  TensorShapeInfo shape_info_;
+
+#define DECLARE_SHAPE_INFO_FUNCS \
+public: \
+size_t num_axis() const { return shape_info_.num_axis(); } \
+size_t shape(size_t i) const { return shape_info_.shape(i); } \
+std::vector<size_t> shape() const { return shape_info_.shape(); } \
+const std::array<size_t, kMaxTensorAxis>& shape_const_ref() const { return shape_info_.shape_const_ref(); } \
+size_t stride(size_t i) const { return shape_info_.stride(i); } \
+std::vector<size_t> stride() const { return shape_info_.stride(); } \
+const std::array<size_t, kMaxTensorAxis>& stride_const_ref() const { return shape_info_.stride_const_ref(); } \
+bool IsContiguous() const { return shape_info_.IsContiguous(); } \
+const TensorShapeInfo& shape_info() const { return shape_info_; } \
+TensorShapeInfo& shape_info() { return shape_info_; }
+
+#define HAVE_SHAPE_INFO DECLARE_SHAPE_INFO DECLARE_SHAPE_INFO_FUNCS
+
 class TENSOR_DLL Tensor final {
+  friend TensorRef;
+  HAVE_SHAPE_INFO
 public:
   explicit Tensor(std::shared_ptr<TensorStorage> storage,
-                  std::vector<size_t> shape,
-                  std::vector<size_t> stride);
+                  const std::vector<size_t>& shape,
+                  const std::vector<size_t>& stride)
+    : storage_(storage), shape_info_(shape, stride) {}
 
   Tensor(const Tensor &) = default;
   
   Tensor(Tensor && other)
     : storage_(std::move(other.storage_))
-    , numAxis_(other.numAxis_)
-    , shape_(std::move(other.shape_))
-    , stride_(std::move(other.stride_)) {}
+    , shape_info_(std::move(other.shape_info_)) {}
   
   friend void swap(Tensor& t1, Tensor& t2) {
     using std::swap;
     swap(t1.storage_, t2.storage_);
-    swap(t1.shape_, t2.shape_);
-    swap(t1.stride_, t2.stride_);
-    swap(t1.numAxis_, t2.numAxis_);
+    swap(t1.shape_info_, t2.shape_info_);
   }
   
   Tensor& operator=(const Tensor& other) {
@@ -103,11 +152,6 @@ public:
   }
 
   // argument getters
-  size_t numAxis() const { return numAxis_; }
-  size_t shape(size_t i) const { return shape_[i]; }
-  std::vector<size_t> shape() const;
-  size_t stride(size_t i) const { return stride_[i]; }
-  std::vector<size_t> stride() const;
   Device device() const { return storage_->device(); }
   size_t alignment() const { return storage_->alignment(); }
   size_t trueSize() const { return storage_->size(); }
@@ -120,9 +164,7 @@ public:
   const void* RawPtr() const { return storage_->RawPtr(); }
 
   // funcs
-  bool IsContiguous() const;
   // /* [TODO] */ Tensor Contiguous() const;
-  static std::vector<size_t> GenerateContiguousStride(std::vector<size_t> shape);
   // /* [TODO] */ Tensor DeepCopy() const;
   
   // Returns a new tensor with the same data as the self tensor but of a different shape.
@@ -136,12 +178,47 @@ public:
 private:
   // /* [TODO] */ void CopyFromTo();
   std::shared_ptr<TensorStorage> storage_;
-  size_t numAxis_;
-  std::array<size_t, kMaxTensorAxis> shape_;
-  std::array<size_t, kMaxTensorAxis> stride_;
+};
+
+
+class TENSOR_DLL TensorRef final {
+  HAVE_SHAPE_INFO
+public:
+  explicit TensorRef(const Tensor& t)
+    : shape_info_(t.shape_info_)
+    , storage_ref_(t.storage_) {}
+
+  TensorRef& operator=(const Tensor& t) {
+    shape_info_ = t.shape_info_;
+    storage_ref_ = t.storage_;
+    return *this;
+  }
+
+  Device device() const { return getStorage()->device(); }
+  size_t alignment() const { return getStorage()->alignment(); }
+  size_t trueSize() const { return getStorage()->size(); }
+
+  template <typename T>
+  T* TypedPtr() { return getStorage()->typename TypedPtr<T>(); }
+  template <typename T>
+  const T* TypedPtr() const { return getStorage()->typename TypedPtr<T>(); }
+  void* RawPtr() { return getStorage()->RawPtr(); }
+  const void* RawPtr() const { return getStorage()->RawPtr(); }
+
+private:
+  // this function should only be used inside this class.
+  // no shared pointer shall be leaked from this class.
+  std::shared_ptr<TensorStorage> getStorage() const {
+    if (auto s = storage_ref_.lock()) {
+      return s;
+    } else {
+      return nullptr;
+    }
+  }
+
+  std::weak_ptr<TensorStorage> storage_ref_;
 };
   
 } // namespace tensor
-
 
 #endif // TENSOR_H_
