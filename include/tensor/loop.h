@@ -9,6 +9,27 @@ namespace tensor {
 namespace cpu {
 
 template <typename Op>
+void BasicLoopFunc(const Op &op,
+                   char** dptrs,
+                   const size_t* strides,
+                   size_t N) {
+  using trait = function_traits<Op>;
+  constexpr size_t ntensors = trait::arity + 1;
+
+  // we assume the first tensor is the output tensor
+  auto optr = reinterpret_cast<trait::return_t*>(dptrs[0]);
+
+#ifdef _MSC_VER 
+#pragma loop(hint_parallel(4))
+#else // _MSC_VER
+#pragma unroll
+#endif //_MSC_VER
+  for (size_t i = 0; i < N; ++i) {
+    optr[i] = std::apply(op, deference<trait>(&dptrs[1], &strides[1], i));
+  }
+}
+
+template <typename Op>
 struct Loop2d {
   Op op_;
   using op_trait = function_traits<Op>;
@@ -34,10 +55,7 @@ struct Loop2d {
     const size_t* outer_strides = &strides[0];
 
     for (size_t outer = 0; outer < outer_size; ++outer) {
-      auto optr = reinterpret_cast<op_trait::return_t*>(data[0]);
-      for (size_t inner = 0; inner < inner_size; ++inner) {
-        optr[inner] = std::apply(op_, deference<op_trait>(&data[1], &inner_strides[1], inner));
-      }
+      BasicLoopFunc<Op>(op_, data.data(), inner_strides, inner_size);
       advance(data, outer_strides);
     }
   }
