@@ -8,24 +8,47 @@
 namespace tensor {
 namespace cpu {
 
-template <typename Op>
+template <typename Op,
+          typename std::enable_if_t<!std::is_void_v<
+            typename function_traits<Op>::return_t>>* = nullptr>
 void BasicLoopFunc(const Op &op,
                    char** dptrs,
                    const size_t* strides,
                    size_t N) {
   using trait = function_traits<Op>;
-  constexpr size_t ntensors = trait::arity + 1;
 
   // we assume the first tensor is the output tensor
   auto optr = reinterpret_cast<trait::return_t*>(dptrs[0]);
 
-#ifdef _MSC_VER 
+// https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+#ifdef _MSC_VER
 #pragma loop(hint_parallel(4))
 #else // _MSC_VER
 #pragma unroll
 #endif //_MSC_VER
   for (size_t i = 0; i < N; ++i) {
     optr[i] = std::apply(op, deference<trait>(&dptrs[1], &strides[1], i));
+  }
+}
+
+// no return, all tensors are input args
+template <typename Op,
+          typename std::enable_if_t<std::is_void_v<
+            typename function_traits<Op>::return_t>>* = nullptr>
+void BasicLoopFunc(const Op &op,
+                   char** dptrs,
+                   const size_t* strides,
+                   size_t N) {
+  using trait = function_traits<Op>;
+
+// https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+#ifdef _MSC_VER
+#pragma loop(hint_parallel(4))
+#else // _MSC_VER
+#pragma unroll
+#endif //_MSC_VER
+  for (size_t i = 0; i < N; ++i) {
+    std::apply(op, deference<trait>(&dptrs[0], &strides[0], i));
   }
 }
 
