@@ -19,31 +19,31 @@ std::shared_ptr<TensorStorage> TensorStorage::AllocStorage(
 
 TensorShapeInfo::TensorShapeInfo(const std::vector<size_t>& shape,
                                  const std::vector<size_t>& stride)
-  : numAxis_(shape.size()) {
+  : num_axis_(shape.size()) {
   CHECK_LE(shape.size(), kMaxTensorAxis) << "Input shape dimension out of range\n";
   CHECK_EQ(shape.size(), stride.size()) << "The number of dimension of"
                                         << "shape and stride should be equal\n";
   
-  std::copy_n(shape.begin(), numAxis_, shape_.begin());
-  std::copy_n(stride.begin(), numAxis_, stride_.begin());
+  std::copy_n(shape.begin(), num_axis_, shape_.begin());
+  std::copy_n(stride.begin(), num_axis_, stride_.begin());
 }
 
 std::vector<size_t> TensorShapeInfo::shape() const {
-  std::vector<size_t> out_shape(numAxis_, 0);
-  std::copy_n(shape_.cbegin(), numAxis_, out_shape.begin());
+  std::vector<size_t> out_shape(num_axis_, 0);
+  std::copy_n(shape_.cbegin(), num_axis_, out_shape.begin());
   return out_shape;
 }
 
 std::vector<size_t> TensorShapeInfo::stride() const {
-  std::vector<size_t> out_stride(numAxis_, 0);
-  std::copy_n(stride_.cbegin(), numAxis_, out_stride.begin());
+  std::vector<size_t> out_stride(num_axis_, 0);
+  std::copy_n(stride_.cbegin(), num_axis_, out_stride.begin());
   return out_stride;
 }
 
 bool TensorShapeInfo::IsContiguous() const {
-  if (numAxis_ == 0) return true; // scalar or what?
+  if (num_axis_ == 0) return true; // scalar or what?
   size_t s = 1;
-  for (size_t i = numAxis_ - 1; i < numAxis_; --i) {
+  for (size_t i = num_axis_ - 1; i < num_axis_; --i) {
     if (stride_[i] == s) {
       s *= shape_[i];
     } else {
@@ -69,6 +69,16 @@ std::vector<size_t> TensorShapeInfo::GenerateContiguousStride(std::vector<size_t
 
 //   // return Tensor()
 // }
+
+Tensor Tensor::Empty(const std::vector<size_t>& shape,
+                     size_t dtype_size,
+                     size_t alignment,
+                     Device device) {
+  size_t numel = std::accumulate(
+    shape.cbegin(), shape.cend(), 1, std::multiplies<size_t>{});
+  auto dptr = TensorStorage::AllocStorage(numel * dtype_size, alignment, device);
+  return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape));
+}
 
 } // namespace tensor
 

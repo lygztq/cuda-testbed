@@ -10,6 +10,8 @@
 
 namespace tensor {
 
+static Device DefaultDevice_{DeviceType::kCPU, 0};
+
 // forward decl
 class TENSOR_DLL Tensor;
 class TENSOR_DLL TensorRef;
@@ -80,19 +82,25 @@ public:
     const std::vector<size_t>& shape, const std::vector<size_t>& stride);
   
   // argument getters
-  size_t num_axis() const { return numAxis_; }
-  size_t shape(size_t i) const { return shape_[i]; }
+  size_t num_axis() const { return num_axis_; }
+  size_t shape(size_t i) const { CHECK_LT(i, num_axis_); return shape_[i]; }
   std::vector<size_t> shape() const;
-  const std::array<size_t, kMaxTensorAxis>& shape_const_ref() const { return shape_; }
-  size_t stride(size_t i) const { return stride_[i]; }
+  const std::array<size_t, kMaxTensorAxis>& shape_ref() const { return shape_; }
+  std::array<size_t, kMaxTensorAxis>& shape_ref() { return shape_; }
+  size_t stride(size_t i) const { CHECK_LT(i, num_axis_); return stride_[i]; }
   std::vector<size_t> stride() const;
-  const std::array<size_t, kMaxTensorAxis>& stride_const_ref() const { return stride_; }
+  const std::array<size_t, kMaxTensorAxis>& stride_ref() const { return stride_; }
+  std::array<size_t, kMaxTensorAxis>& stride_ref() { return stride_; }
 
   bool IsContiguous() const;
   static std::vector<size_t> GenerateContiguousStride(std::vector<size_t> shape);
+  void ChangeNumAxis(size_t n) {
+    CHECK_LE(n, kMaxTensorAxis);
+    num_axis_ = n;
+  }
 
 private:
-  size_t numAxis_;
+  size_t num_axis_;
   std::array<size_t, kMaxTensorAxis> shape_;
   std::array<size_t, kMaxTensorAxis> stride_;
 };
@@ -106,15 +114,22 @@ public: \
 size_t num_axis() const { return shape_info_.num_axis(); } \
 size_t shape(size_t i) const { return shape_info_.shape(i); } \
 std::vector<size_t> shape() const { return shape_info_.shape(); } \
-const std::array<size_t, kMaxTensorAxis>& shape_const_ref() const { return shape_info_.shape_const_ref(); } \
+const std::array<size_t, kMaxTensorAxis>& shape_ref() const { return shape_info_.shape_ref(); } \
+std::array<size_t, kMaxTensorAxis>& shape_ref() { return shape_info_.shape_ref(); } \
 size_t stride(size_t i) const { return shape_info_.stride(i); } \
 std::vector<size_t> stride() const { return shape_info_.stride(); } \
-const std::array<size_t, kMaxTensorAxis>& stride_const_ref() const { return shape_info_.stride_const_ref(); } \
+const std::array<size_t, kMaxTensorAxis>& stride_ref() const { return shape_info_.stride_ref(); } \
+std::array<size_t, kMaxTensorAxis>& stride_ref() { return shape_info_.stride_ref(); } \
 bool IsContiguous() const { return shape_info_.IsContiguous(); } \
 const TensorShapeInfo& shape_info() const { return shape_info_; } \
 TensorShapeInfo& shape_info() { return shape_info_; }
 
 #define HAVE_SHAPE_INFO DECLARE_SHAPE_INFO DECLARE_SHAPE_INFO_FUNCS
+
+template <typename T>
+void ElemCountToByteCount(std::vector<size_t>& elem_shape) {
+  std::for_each(elem_shape.begin(), elem_shape.end(), [](size_t &c) { c *= sizeof(T); });
+}
 
 class TENSOR_DLL Tensor final {
   friend TensorRef;
@@ -171,7 +186,10 @@ public:
   // /* [TODO] */ Tensor View(std::vector<size_t> newShape) const;
 
   // tensor creater
-  // /* [TODO] */ static Tensor Empty(std::vector<size_t> shape, size_t dtypeSize, size_t alignment = 0);
+  static Tensor Empty(const std::vector<size_t>& shape,
+                      size_t dtype_size,
+                      size_t alignment = 0,
+                      Device device = DefaultDevice_);
   // template <typename T>
   // /* [TODO] */ static Tensor Full(std::vector<size_t> shape, T val, size_t alignment = 0);
 
@@ -180,7 +198,8 @@ private:
   std::shared_ptr<TensorStorage> storage_;
 };
 
-
+// This reference is valid when the referred Tensor object is alive.
+// But this is not safe if the referred object is dead.
 class TENSOR_DLL TensorRef final {
   HAVE_SHAPE_INFO
 public:
