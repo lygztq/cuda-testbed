@@ -61,7 +61,84 @@ private:
   bool overflow_;
 };
 
-} // namespace tensor
+// https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/fcb4a74e-c6d4-4a20-94f9-1ad1669b429d/what-does-warning-c4251-class-needs-to-have-dll-interface-to-be-used-by-clients-of-class-mean
+// #ifdef _WIN32
+// #pragma warning(push)
+// #pragma warning(disable:4251)
+// #endif // _WIN32
 
+class TensorIterator {
+  using loop2d_t = function_ref<void(char**, const size_t*, size_t, size_t)>;
+
+public:
+  TensorIterator() = default;
+
+  TENSOR_DLL void ForEach(loop2d_t loop);
+  
+  TENSOR_DLL void FixTensors();
+  
+  TENSOR_DLL void BroadcastShape();
+  
+  TENSOR_DLL void InitShape();
+  
+  TENSOR_DLL void CompressShape();
+  
+  TENSOR_DLL void Build();
+  
+  void AddInput(const Tensor& t) { in_tensors_.emplace_back(t); }
+  
+  void AddOutput(const Tensor& t) { out_tensors_.emplace_back(t); }
+  
+  size_t NumTensors() const {
+    return NumInTensors() + NumOutTensors();
+  }
+  size_t NumInTensors() const {
+    return has_fixed_tensor_ ? num_in_tensors_ : in_tensors_.size();
+  }
+  size_t NumOutTensors() const {
+    return has_fixed_tensor_ ? num_out_tensors_ : out_tensors_.size();
+  }
+  
+  // attributes
+  const std::vector<size_t>& Shape() const { return shape_; }
+
+  std::vector<size_t>& Shape() { return shape_; }
+
+  size_t NumAxes() const { return shape_.size(); }
+  
+  size_t NumElem() const {
+    if (shape_.empty()) return 0;
+#ifdef __GNUC__
+    return std::accumulate(shape_.cbegin(), shape_.cend(), 1ULL, std::multiplies<size_t>{});
+#else // __GNUC__
+    return std::reduce(shape_.cbegin(), shape_.cend(), 1ULL, std::multiplies<size_t>{});
+#endif // __GNUC__
+  }
+
+private:
+  std::vector<size_t> getStridesInBytes() const;
+  void getDataPtrs(std::vector<char*>& dptrs,
+                   const std::vector<char*>& base,
+                   const std::vector<size_t>& index,
+                   const std::vector<size_t>& stride_bytes) const;
+
+  std::vector<TensorRef> in_tensors_;
+  std::vector<TensorRef> out_tensors_;
+  std::vector<TensorRef> tensors_;
+  std::vector<size_t> shape_;
+  size_t num_in_tensors_;
+  size_t num_out_tensors_;
+
+  bool has_fixed_tensor_ = false;
+  bool has_init_ = false;
+  bool has_broadcasted_shape_ = false;
+  bool has_compressed_ = false;
+};
+
+// #ifdef _WIN32
+// #pragma warning(pop)
+// #endif // _WIN32
+
+} // namespace tensor
 
 #endif  // TENSOR_ITERATOR_H_
