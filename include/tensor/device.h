@@ -30,14 +30,17 @@ inline std::string GetDeviceName(DeviceType deviceType) {
   } 
 }
 
-struct TENSOR_DLL Device final {
+struct Device final {
   Device() = default;
   Device(DeviceType i_type, int i_id) : type(i_type), id(i_id) {}
 
-  static size_t DeviceCount(DeviceType t);
+  bool operator==(const Device& other) const { return type == other.type && id == other.id; }
+  bool operator!=(const Device& other) const { return !(*this == other); }
   bool Valid() const { return id < Device::DeviceCount(type); }
-  static void* AllocSpace(size_t size, size_t alignment, Device device);
-  static void FreeSpace(void *dptr, Device device);
+
+  TENSOR_DLL static size_t DeviceCount(DeviceType t);
+  TENSOR_DLL static void* AllocSpace(size_t size, size_t alignment, Device device);
+  TENSOR_DLL static void FreeSpace(void *dptr, Device device);
 
   DeviceType type;
   int id;

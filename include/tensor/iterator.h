@@ -3,6 +3,10 @@
 
 #include <vector>
 #include <array>
+#include <numeric>
+#include "tensor/tensor.h"
+#include "tensor/function_ref.h"
+#include "tensor/macros.h"
 #include "utils/logging.h"
 
 namespace tensor {
@@ -17,36 +21,44 @@ struct Range {
 class IndexCounter {
 public:
   IndexCounter() = default;
-  IndexCounter(std::vector<size_t> shape)
+  IndexCounter(const std::vector<size_t>& shape)
     : shape_(shape)
     , index_(std::vector<size_t>(shape.size(), 0)) {}
 
   bool IsFinish() const {
+    if (overflow_) return true;
     bool finish = true;
-    for (size_t i = 0; i < dim(); ++i) {
+    for (size_t i = 0; i < NumAxes(); ++i) {
       finish &= (index_[i] >= shape_[i]);
     }
     return finish;
   }
 
-  void Advance(size_t dimidx, size_t step = 1) {
-    CHECK(dimidx < dim());
+  void Advance(size_t axis_idx, size_t step = 1) {
+    CHECK(axis_idx < NumAxes());
     size_t carry = step;
-    for (size_t i = dimidx; i <= dimidx; --i) {
+    for (size_t i = axis_idx; i <= axis_idx; --i) {
       index_[i] += carry;
       carry = index_[i] / shape_[i];
       index_[i] %= shape_[i];
     }
+    if (carry) overflow_ = true;
+  }
+
+  void Reset() {
+    memset(index_.data(), 0, sizeof(size_t) * index_.size());
+    overflow_ = false;
   }
 
   // Accessors and mutators
-  const std::vector<size_t>& index() const { return index_; }
-  const std::vector<size_t>& shape() const { return shape_; }
-  size_t dim() const { return shape_.size(); }
+  const std::vector<size_t>& Index() const { return index_; }
+  const std::vector<size_t>& Shape() const { return shape_; }
+  size_t NumAxes() const { return shape_.size(); }
 
-protected:
+private:
   std::vector<size_t> shape_;
   std::vector<size_t> index_;
+  bool overflow_;
 };
 
 } // namespace tensor

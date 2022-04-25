@@ -84,6 +84,11 @@ struct Loop2d {
   }
 };
   
+template <typename Op>
+decltype(auto) MakeLoop2d(Op&& op) {
+  return Loop2d(std::forward<Op>(op));
+}
+  
 } // namespace cpu
 } // namespace tensor
 
