@@ -72,7 +72,7 @@ TEST(TestLoop, TestCPULoop2d) {
   std::vector<size_t> concat_stride = concat_strides({
     o_stride, a_stride, b_stride, c_stride});
   
-  tensor::cpu::Loop2d loop([](int a, float b, size_t c) -> float {return a + b + c; });
+  auto loop = tensor::cpu::MakeLoop2d([](int a, float b, size_t c) -> float {return a + b + c; });
   loop(datas.data(), stride_2d.data(), 2, 3);
   for (size_t i = 0; i < datas.size(); ++i) {
     datas[i] += concat_stride[i];
