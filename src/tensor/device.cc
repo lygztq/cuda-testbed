@@ -68,10 +68,12 @@ void Device::FreeSpace(void* dptr, Device device) {
   switch (device.type) {
     case DeviceType::kCPU:
       CPUFreeSpace(dptr, device);
+      break;
     case DeviceType::kCUDA:
       CUDAFreeSpace(dptr, device);
+      break;
     default:
-      return;
+      break;
   }
 }
 
