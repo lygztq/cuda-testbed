@@ -7,6 +7,7 @@
 #include <utility>
 #include "tensor/device.h"
 #include "tensor/macros.h"
+#include "tensor/dtype.h"
 
 namespace tensor {
 
@@ -143,19 +144,22 @@ class Tensor final {
 public:
   explicit Tensor(std::shared_ptr<TensorStorage> storage,
                   const std::vector<size_t>& shape,
-                  const std::vector<size_t>& stride)
-    : storage_(storage), shape_info_(shape, stride) {}
+                  const std::vector<size_t>& stride,
+                  DataType dtype)
+    : storage_(storage), shape_info_(shape, stride), dtype_(dtype) {}
 
   Tensor(const Tensor &) = default;
   
   Tensor(Tensor && other)
     : storage_(std::move(other.storage_))
-    , shape_info_(std::move(other.shape_info_)) {}
+    , shape_info_(std::move(other.shape_info_))
+    , dtype_(other.dtype_) {}
   
   friend void swap(Tensor& t1, Tensor& t2) {
     using std::swap;
     swap(t1.storage_, t2.storage_);
     swap(t1.shape_info_, t2.shape_info_);
+    swap(t1.dtype_, t2.dtype_);
   }
   
   Tensor& operator=(const Tensor& other) {
@@ -176,6 +180,8 @@ public:
   Device GetDevice() const { return storage_->GetDevice(); }
   size_t Alignment() const { return storage_->GetAlignment(); }
   size_t TrueSizeInBytes() const { return storage_->GetSize(); }
+  DataType GetDataType() const { return dtype_; }
+  size_t ElemSize() const { return DataTypeSize(dtype_); }
 
   template <typename T>
   T* TypedPtr() { return storage_->typename TypedPtr<T>(); }
@@ -192,16 +198,18 @@ public:
   // /* [TODO] */ Tensor View(std::vector<size_t> newShape) const;
 
   // tensor creater
+
   TENSOR_DLL static Tensor Empty(const std::vector<size_t>& shape,
-                      size_t dtype_size,
-                      size_t alignment = 0,
-                      Device device = DefaultDevice_);
+                                 DataType dtype,
+                                 size_t alignment = 0,
+                                 Device device = DefaultDevice_);
   // template <typename T>
-  // /* [TODO] */ static Tensor Full(std::vector<size_t> shape, T val, size_t alignment = 0);
+  // /* [TODO] */ TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = DefaultDevice_);
 
 private:
   // /* [TODO] */ void CopyFromTo();
   std::shared_ptr<TensorStorage> storage_;
+  DataType dtype_;
 };
 
 // This reference is valid when the referred Tensor object is alive.
@@ -215,17 +223,21 @@ public:
   TensorRef() = default;
   explicit TensorRef(const Tensor& t)
     : shape_info_(t.shape_info_)
-    , storage_ref_(t.storage_) {}
+    , storage_ref_(t.storage_)
+    , dtype_(t.dtype_) {}
 
   TensorRef& operator=(const Tensor& t) {
     shape_info_ = t.shape_info_;
     storage_ref_ = t.storage_;
+    dtype_ = t.dtype_;
     return *this;
   }
 
   Device GetDevice() const { return getStorage()->GetDevice(); }
   size_t Alignment() const { return getStorage()->GetAlignment(); }
   size_t TrueSizeInBytes() const { return getStorage()->GetSize(); }
+  DataType GetDataType() const { return dtype_; }
+  size_t ElemSize() const { return DataTypeSize(dtype_); }
 
   template <typename T>
   T* TypedPtr() { return getStorage()->typename TypedPtr<T>(); }
@@ -246,6 +258,7 @@ private:
   }
 
   std::weak_ptr<TensorStorage> storage_ref_;
+  DataType dtype_;
 };
   
 } // namespace tensor

@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "tensor/tensor.h"
 #include "tensor/device.h"
+#include "tensor/dtype.h"
 
 TEST(TestTensor, TestTensorStorageCPU) {
   tensor::Device d = tensor::Device(tensor::DeviceType::kCPU, 0);
@@ -30,9 +31,10 @@ TEST(TestTensor, TestTensorCPU) {
   using tensor::Device;
   using tensor::DeviceType;
   using tensor::TensorRef;
+  using tensor::DataType;
 
   Device d(DeviceType::kCPU, 0);
-  Tensor t = Tensor::Empty({2,3,4}, sizeof(float));
+  Tensor t = Tensor::Empty({2,3,4}, DataType::kFloat);
   EXPECT_NE(t.RawPtr(), nullptr);
   TensorRef ref(t);
   EXPECT_NE(ref.RawPtr(), nullptr);

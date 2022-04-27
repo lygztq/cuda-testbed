@@ -149,7 +149,7 @@ std::vector<size_t> TensorIterator::getStridesInBytes() const {
 
   for (size_t t = 0; t < tensors_.size(); ++t) {
     for (size_t i = 0; i < num_axes; ++i) {
-      strides[i + t * num_axes] = tensors_[t].Stride(i) * tensors_[t].Alignment();
+      strides[i + t * num_axes] = tensors_[t].Stride(i) * tensors_[t].ElemSize();
     }
   }
 
@@ -196,7 +196,7 @@ void TensorIterator::ForEach(loop2d_t loop) {
   for (int i = static_cast<int>(num_axes - 1); i >= 0; --i, --stride_idx) {
     for (size_t t = 0; t < tensors_.size(); ++t) {
       loop_stride[stride_idx * num_tensors + t] = elem_to_bytes(
-        tensors_[t].Stride(i), tensors_[t].Alignment());
+        tensors_[t].Stride(i), tensors_[t].ElemSize());
     }
   }
   size_t inner_size = shape_[num_axes - 1];

@@ -87,14 +87,16 @@ std::vector<size_t> TensorShapeInfo::GenerateContiguousStride(std::vector<size_t
 // }
 
 Tensor Tensor::Empty(const std::vector<size_t>& shape,
-                     size_t dtype_size,
+                     DataType dtype,
                      size_t alignment,
                      Device device) {
+  // return RawEmpty(shape, DataTypeSize(dtype), alignment, device);
+  size_t elem_size = DataTypeSize(dtype);
   size_t numel = std::accumulate(
     shape.cbegin(), shape.cend(), 1ULL, std::multiplies<size_t>{});
-  if (alignment == 0) alignment = dtype_size;
-  auto dptr = TensorStorage::AllocStorage(numel * dtype_size, alignment, device);
-  return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape));
+  if (alignment == 0) alignment = elem_size;
+  auto dptr = TensorStorage::AllocStorage(numel * elem_size, alignment, device);
+  return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), dtype);
 }
 
 } // namespace tensor

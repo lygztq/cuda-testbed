@@ -2,15 +2,17 @@
 #include <gtest/gtest.h>
 #include "tensor/tensor.h"
 #include "tensor/iterator.h"
+#include "tensor/dtype.h"
 
 // TODO: test incontiguous case
 TEST(TestIterator, TestIteratorShapeInference) {
   using tensor::Tensor;
   using tensor::TensorIterator;
+  using tensor::DataType;
 
-  Tensor i0 = Tensor::Empty({2,3,4}, sizeof(float));
-  Tensor i1 = Tensor::Empty({1,2,1,4}, sizeof(double));
-  Tensor o0 = Tensor::Empty({2,2,3,4}, sizeof(float));
+  Tensor i0 = Tensor::Empty({2,3,4}, DataType::kFloat);
+  Tensor i1 = Tensor::Empty({1,2,1,4}, DataType::kDouble);
+  Tensor o0 = Tensor::Empty({2,2,3,4}, DataType::kFloat);
   TensorIterator iter;
   iter.AddInput(i0);
   iter.AddInput(i1);
