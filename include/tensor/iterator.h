@@ -7,6 +7,7 @@
 #include "tensor/tensor.h"
 #include "tensor/function_ref.h"
 #include "tensor/macros.h"
+#include "tensor/common_funcs.h"
 #include "utils/logging.h"
 
 namespace tensor {
@@ -107,12 +108,7 @@ public:
   size_t NumAxes() const { return shape_.size(); }
   
   size_t NumElem() const {
-    if (shape_.empty()) return 0;
-#ifdef __GNUC__
-    return std::accumulate(shape_.cbegin(), shape_.cend(), 1ULL, std::multiplies<size_t>{});
-#else // __GNUC__
-    return std::reduce(shape_.cbegin(), shape_.cend(), 1ULL, std::multiplies<size_t>{});
-#endif // __GNUC__
+    return common::ShapeNumElem(shape_);
   }
 
 private:

@@ -8,6 +8,7 @@
 #include "tensor/device.h"
 #include "tensor/macros.h"
 #include "tensor/dtype.h"
+#include "tensor/common_funcs.h"
 
 namespace tensor {
 
@@ -126,7 +127,10 @@ const std::array<size_t, kMaxTensorAxis>& StrideRef() const { return shape_info_
 std::array<size_t, kMaxTensorAxis>& StrideRef() { return shape_info_.StrideRef(); } \
 bool IsContiguous() const { return shape_info_.IsContiguous(); } \
 const TensorShapeInfo& GetShapeInfo() const { return shape_info_; } \
-TensorShapeInfo& GetShapeInfo() { return shape_info_; }
+TensorShapeInfo& GetShapeInfo() { return shape_info_; } \
+size_t NumElem() const { \
+    return common::ShapeNumElem(shape_info_.shape_, shape_info_.num_axes_); \
+} \
 
 #define HAVE_SHAPE_INFO DECLARE_SHAPE_INFO DECLARE_SHAPE_INFO_FUNCS
 
