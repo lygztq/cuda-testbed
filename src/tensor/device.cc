@@ -1,3 +1,4 @@
+#include <cstring>
 #include <cuda_runtime.h>
 #include "tensor/device.h"
 
@@ -41,12 +42,17 @@ inline void CUDAFreeSpace(void* dptr, Device device) {
 
 size_t Device::DeviceCount(DeviceType t) {
   int cnt = 0;
-  if (t == DeviceType::kCPU) {
-    cnt = 1;
-  } else if (t == DeviceType::kCUDA) {
-    CUDA_CALL(cudaGetDeviceCount(&cnt));
+  cudaError_t e;
+
+  switch (t) {
+    case DeviceType::kCPU:
+      return 1;
+    case DeviceType::kCUDA:
+      CUDA_CALL_WITH_ERROR_VAR(cudaGetDeviceCount(&cnt), e);
+      return cnt;
+    default: // kEmpty
+      return 0;
   }
-  return cnt;
 }
 
 // return nullptr is allocation does not success
@@ -74,6 +80,40 @@ void Device::FreeSpace(void* dptr, Device device) {
       break;
     default:
       break;
+  }
+}
+
+void Device::Transfer(const void* src,
+                      Device src_device,
+                      void* dst,
+                      Device dst_device,
+                      size_t size) {
+  cudaError_t e;
+  if (src_device.type == DeviceType::kCPU) {
+    switch (dst_device.type) {
+      case DeviceType::kCPU:
+        std::memcpy(dst, src, size);
+        break;
+      case DeviceType::kCUDA:
+        CUDA_CALL_WITH_ERROR_VAR(
+          cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice), e);
+        break;
+      default:
+        break;
+    }
+  } else if (src_device.type == DeviceType::kCUDA) {
+    switch (dst_device.type) {
+      case DeviceType::kCPU:
+        CUDA_CALL_WITH_ERROR_VAR(
+          cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost), e);
+        break;
+      case DeviceType::kCUDA:
+      CUDA_CALL_WITH_ERROR_VAR(
+          cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice), e);
+        break;
+      default:
+        break;
+    }
   }
 }
 

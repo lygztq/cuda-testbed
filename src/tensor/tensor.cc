@@ -99,5 +99,30 @@ Tensor Tensor::Empty(const std::vector<size_t>& shape,
   return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), dtype);
 }
 
+Tensor Tensor::SameAs(const Tensor& other, bool contiguous, Device device) {
+  if (device.IsEmpty()) {
+    device = other.GetDevice();
+  }
+  auto shape = other.Shape();
+  auto dptr = TensorStorage::AllocStorage(
+    other.NumElem() * DataTypeSize(other.GetDataType()), other.Alignment(), device);
+
+  if (contiguous)
+    return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), other.GetDataType());
+  else
+    return Tensor(dptr, shape, other.Stride(), other.GetDataType());
+}
+
+Tensor Tensor::Transfer(Device device) const {
+  CHECK(device.Valid()) << "Dst device must be a valid device";
+  
+  if (device == GetDevice()) return *this;
+  Tensor new_tensor = Tensor::SameAs(*this, false, device);
+  Device::Transfer(
+    RawPtr(), GetDevice(), new_tensor.RawPtr(), new_tensor.GetDevice(), TrueSizeInBytes());
+
+  return new_tensor;
+}
+
 } // namespace tensor
 

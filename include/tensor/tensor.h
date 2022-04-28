@@ -12,7 +12,7 @@
 
 namespace tensor {
 
-static Device DefaultDevice_{DeviceType::kCPU, 0};
+// static Device DefaultDevice_{DeviceType::kCPU, 0};
 
 // forward decl
 class Tensor;
@@ -206,9 +206,17 @@ public:
   TENSOR_DLL static Tensor Empty(const std::vector<size_t>& shape,
                                  DataType dtype,
                                  size_t alignment = 0,
-                                 Device device = DefaultDevice_);
+                                 Device device = Device::DefaultDevice());
+
+  // create a new tensor with same shape/dtype/device info as another tensor
+  // Note: the new tensor is contiguous is arg contiguous is true
+  TENSOR_DLL static Tensor SameAs(const Tensor& other, bool contiguous=false, Device device = Device::EmptyDevice());
+
+  // transfer data of a tensor to another device, return a new tensor
+  TENSOR_DLL Tensor Transfer(Device device) const;
+
   // template <typename T>
-  // /* [TODO] */ TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = DefaultDevice_);
+  // /* [TODO] */ TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = Device::DefaultDevice());
 
 private:
   // /* [TODO] */ void CopyFromTo();
