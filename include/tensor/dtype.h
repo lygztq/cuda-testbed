@@ -80,6 +80,25 @@ inline size_t DataTypeSize(DataType dtype) {
   }
 }
 
+#define DTYPE_SWITCH_CASE(switch_t, crt, ...) \
+  case switch_t:                              \
+    using scalar_t = crt;                     \
+    return __VA_ARGS__;                       \
+
+#define DTYPE_SWITCH(dtype, ...)                                \
+  DataType _st = DataType(dtype);                               \
+  switch (_st) {                                                \
+    DTYPE_SWITCH_CASE(DataType::kInt8,   int8_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kUInt8,  uint8_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kInt32,  int32_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt32, uint32_t, __VA_ARGS__) \
+    DTYPE_SWITCH_CASE(DataType::kInt64,  int64_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt64, uint64_t, __VA_ARGS__) \
+    DTYPE_SWITCH_CASE(DataType::kHalf,   fp16_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
+    DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
+  }
+
 } // namespace tensor
 
 #endif  // TENSOR_DTYPE_H_
