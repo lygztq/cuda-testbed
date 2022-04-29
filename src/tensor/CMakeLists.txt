@@ -1,6 +1,8 @@
 add_definitions(-DTENSOR_EXPORTS)
 
 file(GLOB_RECURSE TENSOR_SOURCE_LIST "${CMAKE_SOURCE_DIR}/src/tensor/*.cc")
+file(GLOB_RECURSE TENSOR_CU_SOURCE_LIST "${CMAKE_SOURCE_DIR}/src/tensor/*.cu")
+list(APPEND TENSOR_SOURCE_LIST ${TENSOR_CU_SOURCE_LIST})
 add_library(tensor SHARED ${TENSOR_SOURCE_LIST})
 
 target_include_directories(tensor PRIVATE "${CMAKE_SOURCE_DIR}/include")
