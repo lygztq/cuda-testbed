@@ -1,16 +1,22 @@
 /*!
- * \file common_funcs.h
- * \brief commonly used inline functions
+ * \file common.h
+ * \brief commonly used things
  */
-#ifndef TENSOR_COMMON_FUNCS_H_
-#define TENSOR_COMMON_FUNCS_H_
+#ifndef TENSOR_COMMON_H_
+#define TENSOR_COMMON_H_
 
 #include <vector>
 #include <type_traits>
 #include <numeric>
 
 namespace tensor {
+
+// constants
+constexpr size_t kMaxTensorAxis = 16;
+
 namespace common {
+
+std::vector<size_t> ShapeDeduction(size_t num_elem, const std::vector<int>& shape);
 
 template <typename T, typename std::enable_if_t<std::is_integral_v<T>>* = nullptr>
 inline size_t ShapeNumElem(const std::vector<T>& shape) {
@@ -36,4 +42,4 @@ inline size_t ShapeNumElem(const std::array<T, N>& arr_shape, const size_t num_a
 } // namespace tensor
 
 
-#endif  // TENSOR_COMMON_FUNCS_H_
+#endif  // TENSOR_COMMON_H_
