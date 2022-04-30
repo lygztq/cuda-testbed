@@ -38,6 +38,8 @@ DEFINE_CRT_TO_DTYPE(float, DataType::kFloat);
 DEFINE_CRT_TO_DTYPE(double, DataType::kDouble);
 
 #undef DEFINE_CRT_TO_DTYPE
+template <typename CRT>
+constexpr inline DataType crt_to_dtype_v = CRuntimeTypeToDataType<CRT>::type;
 
 template <typename CRT>
 struct SupportCRT {
@@ -61,9 +63,8 @@ DEFINE_SUPPORT_CRT(float)
 DEFINE_SUPPORT_CRT(double)
 
 #undef DEFINE_SUPPORT_CRT
-
-template <typename CRT>
-using crt_to_dtype_t = typename CRuntimeTypeToDataType<CRT>::type;
+template <typename T>
+inline constexpr bool support_crt_v = SupportCRT<T>::value;
 
 inline size_t DataTypeSize(DataType dtype) {
   switch (dtype) {
@@ -81,9 +82,11 @@ inline size_t DataTypeSize(DataType dtype) {
 }
 
 #define DTYPE_SWITCH_CASE(switch_t, crt, ...) \
-  case switch_t:                              \
+  case switch_t: {                            \
     using scalar_t = crt;                     \
-    return __VA_ARGS__;                       \
+    __VA_ARGS__();                            \
+    break;                                    \
+  }
 
 #define DTYPE_SWITCH(dtype, ...)                                \
   DataType _st = DataType(dtype);                               \

@@ -2,8 +2,10 @@
 #include <functional>
 #include <numeric>
 #include "tensor/tensor.h"
-#include "tensor/common_funcs.h"
+#include "tensor/common.h"
 #include "utils/logging.h"
+#include "tensor/cpu_op.h"
+#include "tensor/cuda_op.h"
 
 namespace tensor {
 
@@ -79,13 +81,13 @@ std::vector<size_t> TensorShapeInfo::GenerateContiguousStride(std::vector<size_t
   return stride;
 }
 
-// Tensor Tensor::View(std::vector<size_t> newShape) const {
-//   size_t s1 = std::reduce(shape_.cbegin(), shape_.cend(), 1, std::multiplies<size_t>());
-//   size_t s2 = std::reduce(newShape.cbegin(), newShape.cend(), 1, std::multiplies<size_t>());
-//   CHECK(s1 == s2) << "Given new shape does not match the original shape\n";
+Tensor Tensor::View(const std::vector<int>& view_shape) const {
+  std::vector<size_t> actual_view_shape = common::ShapeDeduction(NumElem(), view_shape);
+  CHECK(IsContiguous()) << "Only contiguous tensor can create views\n";
 
-//   // return Tensor()
-// }
+  std::vector<size_t> view_stride = TensorShapeInfo::GenerateContiguousStride(actual_view_shape);
+  return Tensor(this->storage_, actual_view_shape, view_stride, GetDataType());
+}
 
 Tensor Tensor::Empty(const std::vector<size_t>& shape,
                      DataType dtype,
@@ -122,6 +124,83 @@ Tensor Tensor::Transfer(Device device) const {
     RawPtr(), GetDevice(), new_tensor.RawPtr(), new_tensor.GetDevice(), TrueSizeInBytes());
 
   return new_tensor;
+}
+
+Tensor Tensor::Contiguous() const {
+  if (IsContiguous()) return *this;
+  CHECK_NE(GetDevice().type, DeviceType::kEmpty);
+
+  Tensor contiguous = Tensor::SameAs(*this, true, GetDevice());
+
+  switch (GetDevice().type) {
+    case DeviceType::kCPU:
+      ops::cpu::CopyKernel(*this, contiguous);
+      break;
+    case DeviceType::kCUDA:
+      ops::cuda::CopyKernel(*this, contiguous);
+      break;
+    default:
+      break;
+  }
+
+  return contiguous;
+}
+
+Tensor Tensor::DeepCopy() const {
+  Tensor copy = Tensor::SameAs(*this);
+  Device::Transfer(
+    RawPtr(), GetDevice(), copy.RawPtr(), GetDevice(), TrueSizeInBytes());
+  return copy;
+}
+
+Tensor Tensor::Transpose_(size_t i, size_t j) {
+  CHECK_LT(i, NumAxes());
+  CHECK_LT(j, NumAxes());
+  if (i == j) return *this;
+
+  using std::swap;
+  auto& shape = ShapeRef();
+  auto& stride = StrideRef();
+  swap(shape[i], shape[j]);
+  swap(stride[i], stride[j]);
+  return *this;
+}
+
+Tensor Tensor::Transpose(size_t i, size_t j) const {
+  Tensor transposed(*this);
+  return transposed.Transpose_(i, j);
+}
+
+Tensor Tensor::Transpose_(const std::vector<size_t>& perm) {
+  CHECK_EQ(perm.size(), NumAxes());
+  std::array<bool, kMaxTensorAxis> vis;
+  vis.fill(false);
+
+  // check this is a valid perm
+  for (size_t d : perm) {
+    CHECK_LE(d, NumAxes());
+    CHECK(!vis[d]);
+    vis[d] = true;
+  }
+
+  auto& shape = ShapeRef();
+  auto& stride = StrideRef();
+  std::array<size_t, kMaxTensorAxis> new_shape;
+  std::array<size_t, kMaxTensorAxis> new_stride;
+  for (size_t i = 0; i < NumAxes(); ++i) {
+    new_shape[i] = shape[perm[i]];
+    new_stride[i] = stride[perm[i]];
+  }
+
+  std::copy_n(new_shape.begin(), NumAxes(), shape.begin());
+  std::copy_n(new_stride.begin(), NumAxes(), stride.begin());
+
+  return *this;
+}
+
+Tensor Tensor::Transpose(const std::vector<size_t>& perm) const {
+  Tensor transposed(*this);
+  return transposed.Transpose_(perm);
 }
 
 } // namespace tensor

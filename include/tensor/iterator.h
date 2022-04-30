@@ -7,7 +7,7 @@
 #include "tensor/tensor.h"
 #include "tensor/function_ref.h"
 #include "tensor/macros.h"
-#include "tensor/common_funcs.h"
+#include "tensor/common.h"
 #include "utils/logging.h"
 
 namespace tensor {
@@ -105,11 +105,21 @@ public:
 
   std::vector<size_t>& Shape() { return shape_; }
 
+  const std::vector<TensorRef>& Tensors() const { return tensors_; }
+
+  std::vector<TensorRef>& Tensors() { return tensors_; }
+
   size_t NumAxes() const { return shape_.size(); }
   
   size_t NumElem() const {
     return common::ShapeNumElem(shape_);
   }
+
+  bool HasInit() const { return has_init_; }
+  bool HasFixedTensor() const { return has_fixed_tensor_; }
+  bool HasBroadCastedShape() const { return has_broadcasted_shape_; }
+  bool Valid() const { return has_init_ && has_fixed_tensor_ && has_broadcasted_shape_; }
+  bool HasCompressedShape() const { return has_compressed_; }
 
 private:
   std::vector<size_t> getStridesInBytes() const;

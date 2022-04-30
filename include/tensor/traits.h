@@ -73,7 +73,7 @@ deference_impl(
   const size_t* strides,
   size_t i,
   std::index_sequence<INDEX...> index) {
-  return std::make_tuple(*(reinterpret_cast<typename traits::arg_t<INDEX>*>(
+  return std::make_tuple(*(reinterpret_cast<typename traits::template arg_t<INDEX>*>(
     data[INDEX] + i * strides[INDEX]))...);
 }
 
@@ -83,6 +83,28 @@ deference(char* data[], const size_t* strides, size_t i) {
   using index_t = std::make_index_sequence<traits::arity>;
   return deference_impl<traits>(data, strides, i, index_t{});
 }
+
+template <typename traits, size_t... INDEX>
+typename traits::args_t_tuple
+deference_loop_impl(char* data[], std::index_sequence<INDEX...> index) {
+  return std::make_tuple(
+    *(reinterpret_cast<typename traits::template arg_t<INDEX>*>(data[INDEX]))...);
+}
+
+template <typename traits, std::enable_if_t<is_function_traits<traits>::value, bool> = false>
+typename traits::args_t_tuple
+deference_loop(char* data[]) {
+  using index_t = std::make_index_sequence<traits::arity>;
+  return deference_loop_impl<traits>(data, index_t{});
+}
+
+template <typename T>
+struct unary_function {
+  constexpr static bool value = (function_traits<T>::arity == 1);
+};
+
+template <typename T>
+constexpr inline bool unary_function_v = unary_function<T>::value;
 
 } // namespace tensor
 

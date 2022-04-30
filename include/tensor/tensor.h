@@ -8,7 +8,7 @@
 #include "tensor/device.h"
 #include "tensor/macros.h"
 #include "tensor/dtype.h"
-#include "tensor/common_funcs.h"
+#include "tensor/common.h"
 
 namespace tensor {
 
@@ -17,8 +17,6 @@ namespace tensor {
 // forward decl
 class Tensor;
 class TensorRef;
-
-constexpr size_t kMaxTensorAxis = 16;
 
 class TensorStorage final {
 public:
@@ -188,21 +186,29 @@ public:
   size_t ElemSize() const { return DataTypeSize(dtype_); }
 
   template <typename T>
-  T* TypedPtr() { return storage_->typename TypedPtr<T>(); }
+  T* TypedPtr() { return storage_->TypedPtr<T>(); }
   template <typename T>
-  const T* TypedPtr() const { return storage_->typename TypedPtr<T>(); }
+  const T* TypedPtr() const { return storage_->TypedPtr<T>(); }
   void* RawPtr() { return storage_->RawPtr(); }
   const void* RawPtr() const { return storage_->RawPtr(); }
 
   // funcs
-  // /* [TODO] */ Tensor Contiguous() const;
-  // /* [TODO] */ Tensor DeepCopy() const;
+  TENSOR_DLL Tensor Contiguous() const;
+  TENSOR_DLL Tensor DeepCopy() const;
+  TENSOR_DLL Tensor Transpose_(size_t i, size_t j);
+  TENSOR_DLL Tensor Transpose_(const std::vector<size_t>& perm);
+  TENSOR_DLL Tensor Transpose(size_t i, size_t j) const;
+  TENSOR_DLL Tensor Transpose(const std::vector<size_t>& perm) const;
+
+  // transfer data of a tensor to another device, return a new tensor
+  TENSOR_DLL Tensor Transfer(Device device) const;
   
   // Returns a new tensor with the same data as the self tensor but of a different shape.
-  // /* [TODO] */ Tensor View(std::vector<size_t> newShape) const;
+  // can have one -1 for shape deduction
+  TENSOR_DLL Tensor View(const std::vector<int>& view_shape) const;
+
 
   // tensor creater
-
   TENSOR_DLL static Tensor Empty(const std::vector<size_t>& shape,
                                  DataType dtype,
                                  size_t alignment = 0,
@@ -212,11 +218,8 @@ public:
   // Note: the new tensor is contiguous is arg contiguous is true
   TENSOR_DLL static Tensor SameAs(const Tensor& other, bool contiguous=false, Device device = Device::EmptyDevice());
 
-  // transfer data of a tensor to another device, return a new tensor
-  TENSOR_DLL Tensor Transfer(Device device) const;
-
-  // template <typename T>
-  // /* [TODO] */ TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = Device::DefaultDevice());
+  // template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+  // TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = Device::DefaultDevice());
 
 private:
   // /* [TODO] */ void CopyFromTo();
@@ -252,9 +255,9 @@ public:
   size_t ElemSize() const { return DataTypeSize(dtype_); }
 
   template <typename T>
-  T* TypedPtr() { return getStorage()->typename TypedPtr<T>(); }
+  T* TypedPtr() { return getStorage()->TypedPtr<T>(); }
   template <typename T>
-  const T* TypedPtr() const { return getStorage()->typename TypedPtr<T>(); }
+  const T* TypedPtr() const { return getStorage()->TypedPtr<T>(); }
   void* RawPtr() { return getStorage()->RawPtr(); }
   const void* RawPtr() const { return getStorage()->RawPtr(); }
 

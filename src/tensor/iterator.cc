@@ -175,7 +175,7 @@ void TensorIterator::getDataPtrs(std::vector<char*>& dptrs,
 }
 
 void TensorIterator::ForEach(loop2d_t loop) {
-  CHECK(has_init_ && has_broadcasted_shape_);
+  CHECK(Valid());
 
   // init data ptrs
   size_t num_tensors = NumTensors();

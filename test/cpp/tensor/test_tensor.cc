@@ -1,11 +1,17 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include "tensor/tensor.h"
+#include "tensor/tensor_op.h"
 #include "tensor/device.h"
 #include "tensor/dtype.h"
 
+using tensor::Tensor;
+using tensor::Device;
+using tensor::DeviceType;
+using tensor::DataType;
+
 TEST(TestTensor, TestTensorStorageCPU) {
-  tensor::Device d = tensor::Device(tensor::DeviceType::kCPU, 0);
+  Device d = Device(tensor::DeviceType::kCPU, 0);
   auto ptr = tensor::TensorStorage::AllocStorage(24 * sizeof(int), sizeof(int), d);
   EXPECT_EQ((ptr->GetAlignment()), sizeof(int));
   EXPECT_EQ((ptr->GetSize()), 24 * sizeof(int));
@@ -26,12 +32,8 @@ TEST(TestTensor, TestTensorShapeInfo) {
   EXPECT_TRUE(shape_info.IsContiguous());
 }
 
-TEST(TestTensor, TestTensorCPU) {
-  using tensor::Tensor;
-  using tensor::Device;
-  using tensor::DeviceType;
+TEST(TestTensor, TestTensorCreateCPU) {
   using tensor::TensorRef;
-  using tensor::DataType;
 
   Device d(DeviceType::kCPU, 0);
   Tensor t = Tensor::Empty({2,3,4}, DataType::kFloat);
@@ -41,4 +43,70 @@ TEST(TestTensor, TestTensorCPU) {
   EXPECT_EQ(ref.GetDevice(), d);
 }
 
+TEST(TestTensor, TestTensorCreateCUDA) {
+  using tensor::TensorRef;
 
+  Device d(DeviceType::kCUDA, 0);
+  Tensor t = Tensor::Empty({2,3,4}, DataType::kFloat, 0, Device(DeviceType::kCUDA, 0));
+  EXPECT_NE(t.RawPtr(), nullptr);
+  TensorRef ref(t);
+  EXPECT_NE(ref.RawPtr(), nullptr);
+  EXPECT_EQ(ref.GetDevice(), d);
+}
+
+TEST(TestTensor, TestTransfer) {
+  Tensor t = Tensor::Empty({2,3,4}, DataType::kFloat);
+  float *raw_ptr_t = t.TypedPtr<float>();
+  raw_ptr_t[0] = 1024.0;
+  raw_ptr_t[6] = 512.0;
+  Tensor t_cuda = t.Transfer(Device(DeviceType::kCUDA, 0));
+  Tensor t_copy = t_cuda.Transfer(Device(DeviceType::kCPU, 0));
+
+  float *raw_ptr_t_copy = t_copy.TypedPtr<float>();
+  EXPECT_EQ(raw_ptr_t_copy[0], 1024.f);
+  EXPECT_EQ(raw_ptr_t_copy[6], 512.f);
+}
+
+TEST(TestTensor, TestContiguous) {
+  // cpu
+  std::vector<size_t> shape{2,3,4};
+  Tensor t = Tensor::Empty(shape, DataType::kFloat);
+  EXPECT_TRUE(t.IsContiguous());
+  t.Transpose_(0, 2);
+  EXPECT_EQ(t.Shape(0), 4);
+  EXPECT_EQ(t.Shape(2), 2);
+  EXPECT_FALSE(t.IsContiguous());
+  Tensor t_cont = t.Contiguous();
+  EXPECT_EQ(t_cont.Shape(0), 4);
+  EXPECT_EQ(t_cont.Shape(2), 2);
+  EXPECT_TRUE(t_cont.IsContiguous());
+
+  // cuda
+  Tensor t_cuda = Tensor::Empty(shape, DataType::kFloat, 0, {DeviceType::kCUDA, 0});
+  EXPECT_TRUE(t_cuda.IsContiguous());
+  t_cuda.Transpose_(0, 2);
+  EXPECT_EQ(t_cuda.Shape(0), 4);
+  EXPECT_EQ(t_cuda.Shape(2), 2);
+  EXPECT_FALSE(t_cuda.IsContiguous());
+  Tensor t_cuda_cont = t_cuda.Contiguous();
+  EXPECT_EQ(t_cuda_cont.Shape(0), 4);
+  EXPECT_EQ(t_cuda_cont.Shape(2), 2);
+  EXPECT_TRUE(t_cuda_cont.IsContiguous());
+}
+
+// TEST(TestTensor, TestFull) {
+//   using tensor::Full;
+//   std::vector<size_t> shape{2,3,4};
+
+//   // cpu
+//   Tensor t_cpu = Full(shape, 1.f);
+
+// }
+
+TEST(TestTensor, TestTranspose) {
+
+}
+
+TEST(TestTensor, TestView) {
+
+}

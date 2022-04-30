@@ -15,4 +15,10 @@
 
 #define RESTRICT __restrict
 
+#define TENSOR_KERNEL __global__
+#define TENSOR_HOST   __host__
+#define TENSOR_DEVICE __device__
+#define TENSOR_HOST_DEVICE TENSOR_HOST TENSOR_DEVICE
+#define CUDA_LAMBDA TENSOR_DEVICE TENSOR_HOST
+
 #endif // TENSOR_MACROS_H_

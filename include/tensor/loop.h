@@ -6,6 +6,7 @@
 #include "tensor/traits.h"
 
 namespace tensor {
+namespace ops {
 namespace cpu {
 
 template <typename Op,
@@ -18,7 +19,7 @@ void BasicLoopFunc(const Op &op,
   using trait = function_traits<Op>;
 
   // we assume the first tensor is the output tensor
-  auto optr = reinterpret_cast<trait::return_t*>(dptrs[0]);
+  auto optr = reinterpret_cast<typename trait::return_t*>(dptrs[0]);
 
 // https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
 #ifdef _MSC_VER
@@ -86,10 +87,11 @@ struct Loop2d {
 
 template <typename Op>
 decltype(auto) MakeLoop2d(Op&& op) {
-  return Loop2d(std::forward<Op>(op));
+  return Loop2d<Op>(std::forward<Op>(op));
 }
   
 } // namespace cpu
+} // namespace ops
 } // namespace tensor
 
 

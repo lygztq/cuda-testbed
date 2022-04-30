@@ -15,7 +15,7 @@ void CopyKernel(const Tensor& src, Tensor& dst) {
   iter.AddOutput(dst);
   iter.Build();
 
-  DTYPE_SWITCH(src.GetDataType(), CPUKernel(iter, [&](scalar_t elem) { return elem; }));
+  DTYPE_SWITCH(src.GetDataType(), [&](){CPUElemwiseKernel(iter, [=](scalar_t elem) { return elem; }); });
 }
 
 void ElemwiseCopyKernel(const Tensor& src, Tensor& dst) {
@@ -25,12 +25,6 @@ void ElemwiseCopyKernel(const Tensor& src, Tensor& dst) {
 
   size_t size_in_bytes = src.TrueSizeInBytes();
   memcpy(dst.RawPtr(), src.RawPtr(), size_in_bytes);
-}
-
-Tensor ContiguousKernel(const Tensor& src) {
-  Tensor contiguous = Tensor::SameAs(src, true, src.GetDevice());
-  CopyKernel(src, contiguous);
-  return contiguous;
 }
 
 } // namespace cpu
