@@ -1,7 +1,6 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include "tensor/tensor.h"
-#include "tensor/tensor_op.h"
 #include "tensor/device.h"
 #include "tensor/dtype.h"
 
