@@ -93,17 +93,27 @@ TEST(TestTensor, TestContiguous) {
   EXPECT_TRUE(t_cuda_cont.IsContiguous());
 }
 
-// TEST(TestTensor, TestFull) {
-//   using tensor::Full;
-//   std::vector<size_t> shape{2,3,4};
+TEST(TestTensor, TestFull) {
+  std::vector<size_t> shape{2,3,4};
 
-//   // cpu
-//   Tensor t_cpu = Full(shape, 1.f);
+  // cpu
+  Tensor t_cpu = Tensor::Full(shape, 1.f);
+  float* t_cpu_ptr = t_cpu.TypedPtr<float>();
+  for (size_t i = 0; i < t_cpu.NumElem(); ++i) {
+    EXPECT_EQ(t_cpu_ptr[i], 1.f);
+  }
 
-// }
+  // cuda
+  Tensor t_cuda = Tensor::Full(shape, 3.14, 0, {DeviceType::kCUDA, 0});
+  Tensor t_cuda_cpu = t_cuda.Transfer({DeviceType::kCPU, 0});
+  double* t_cuda_cpu_ptr = t_cuda_cpu.TypedPtr<double>();
+  for (size_t i = 0; i < t_cuda.NumElem(); ++i) {
+    EXPECT_EQ(t_cuda_cpu_ptr[i], 3.14);
+  }
+}
 
 TEST(TestTensor, TestTranspose) {
-
+  
 }
 
 TEST(TestTensor, TestView) {

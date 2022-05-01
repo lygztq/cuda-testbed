@@ -58,6 +58,8 @@ void CUDAElemwiseKernel(TensorIterator& iter, Op&& op) {
 // the data layout of the destination tensor.
 TENSOR_DLL void CopyKernel(const Tensor& src, Tensor& dst);
 
+template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+TENSOR_DLL void FillKernel(Tensor& tensor, T val);
 
 } // namespace cuda
 } // namespace ops

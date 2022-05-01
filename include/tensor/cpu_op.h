@@ -43,7 +43,21 @@ TENSOR_DLL void ElemwiseCopyKernel(const Tensor& src, Tensor& dst);
 // the data layout of the destination tensor.
 TENSOR_DLL void CopyKernel(const Tensor& src, Tensor& dst);
 
-TENSOR_DLL Tensor ContiguousKernel(const Tensor& src);
+template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+void FillKernel(Tensor& tensor, T val) {
+  T* dptr = tensor.TypedPtr<T>();
+  size_t num_elem = tensor.NumElem();
+
+// TODO: use openmp here
+#ifdef _MSC_VER
+#pragma loop(hint_parallel(4))
+#endif //_MSC_VER
+  for (size_t i = 0; i < num_elem; ++i) {
+    dptr[i] = val;
+  }
+}
+
+// TENSOR_DLL Tensor ContiguousKernel(const Tensor& src);
 
 } // namespace cpu  
 } // namespace ops

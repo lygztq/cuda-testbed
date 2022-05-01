@@ -103,6 +103,22 @@ __global__ void elementwise_kernel(size_t N, func_t f) {
   }
 }
 
+template <size_t nt, size_t vt, typename T>
+__global__ void fill_kernel(size_t N, T* dptr, T val) {
+  int tid = threadIdx.x;
+  int nv = (int)(nt * vt);
+  int idx = nv * blockIdx.x + tid;
+#ifndef _MSC_VER
+  #pragma unroll
+#endif
+  for (int i = 0; i < vt; i++) {
+    if (idx < N) {
+      dptr[idx] = val;
+      idx += nt;
+    }
+  }
+}
+
 template <size_t nt, size_t vt, typename Op>
 void cudaElemwiseKernelImpl(size_t N, Op&& op) {
   if (N == 0) return;
@@ -110,6 +126,16 @@ void cudaElemwiseKernelImpl(size_t N, Op&& op) {
   dim3 block(static_cast<unsigned int>(nt));
   dim3 grid(static_cast<unsigned int>((N + block.x * vt - 1) / (block.x * vt)));
   elementwise_kernel<nt, vt, Op><<<grid, block>>>(N, op);
+  CUDA_CALL(cudaGetLastError());
+}
+
+template <size_t nt, size_t vt, typename T>
+void FillKernelImpl(size_t N, T* dptr, T val) {
+  if (N == 0) return;
+
+  dim3 block(static_cast<unsigned int>(nt));
+  dim3 grid(static_cast<unsigned int>((N + block.x * vt - 1) / (block.x * vt)));
+  fill_kernel<nt, vt, T><<<grid, block>>>(N, dptr, val);
   CUDA_CALL(cudaGetLastError());
 }
 

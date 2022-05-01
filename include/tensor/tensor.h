@@ -207,6 +207,22 @@ public:
   // can have one -1 for shape deduction
   TENSOR_DLL Tensor View(const std::vector<int>& view_shape) const;
 
+  template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+  Tensor Fill(T val) {
+    size_t num_bytes = sizeof(T);
+    return Tensor::FillInBytes(*this, reinterpret_cast<void*>(&val), num_bytes);
+  }
+
+  template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+  static Tensor Full(const std::vector<size_t>& shape,
+                     T val,
+                     size_t alignment = 0,
+                     Device device = Device::DefaultDevice()) {
+    Tensor new_tensor = Tensor::Empty(shape, crt_to_dtype_v<T>, alignment, device);
+    return new_tensor.Fill(val);
+  }
+
+  TENSOR_DLL static Tensor FillInBytes(Tensor& t, void* val, size_t num_bytes);
 
   // tensor creater
   TENSOR_DLL static Tensor Empty(const std::vector<size_t>& shape,

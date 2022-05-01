@@ -22,6 +22,18 @@ void CopyKernel(const Tensor& src, Tensor& dst) {
   });
 }
 
+template <typename T, typename std::enable_if_t<support_crt_v<T>>*>
+void FillKernel(Tensor& tensor, T val) {
+  T* dptr = tensor.TypedPtr<T>();
+  constexpr size_t unroll = sizeof(T) >= 4 ? 2 : 4;
+  FillKernelImpl<128, unroll>(tensor.NumElem(), dptr, val);
+}
+
+template void FillKernel<uint8_t, nullptr>(Tensor& t, uint8_t val);
+template void FillKernel<uint16_t, nullptr>(Tensor& t, uint16_t val);
+template void FillKernel<uint32_t, nullptr>(Tensor& t, uint32_t val);
+template void FillKernel<uint64_t, nullptr>(Tensor& t, uint64_t val);
+
 } // namespace cuda
 } // namespace ops
 } // namespace tensor

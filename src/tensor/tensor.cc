@@ -203,5 +203,41 @@ Tensor Tensor::Transpose(const std::vector<size_t>& perm) const {
   return transposed.Transpose_(perm);
 }
 
+template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+Tensor FillImpl(Tensor& t, T val) {
+  switch (t.GetDevice().type) {
+    case DeviceType::kCPU:
+      ops::cpu::FillKernel<T>(t, val);
+      break;
+    case DeviceType::kCUDA:
+      ops::cuda::FillKernel<T>(t, val);
+      break;
+    default:
+      break;
+  }
+  return t;
+}
+
+Tensor Tensor::FillInBytes(Tensor& t, void* val, size_t num_bytes) {
+  switch (num_bytes) {
+    case 1:
+      FillImpl<uint8_t>(t, *(reinterpret_cast<uint8_t*>(val)));
+      break;
+    case 2:
+      FillImpl<uint16_t>(t, *(reinterpret_cast<uint16_t*>(val)));
+      break;
+    case 4:
+      FillImpl<uint32_t>(t, *(reinterpret_cast<uint32_t*>(val)));
+      break;
+    case 8:
+      FillImpl<uint64_t>(t, *(reinterpret_cast<uint64_t*>(val)));
+      break;
+    default:
+      LOG_ERROR << "Unsupported data type size\n";
+      break;
+  }
+  return t;
+}
+
 } // namespace tensor
 
