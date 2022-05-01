@@ -260,5 +260,10 @@ Tensor Tensor::Cast(DataType dtype) const {
   return cast_res;
 }
 
+Tensor Tensor::Reshape(const std::vector<int>& new_shape) const {
+  if (IsContiguous()) return this->View(new_shape);
+  else return this->Contiguous().View(new_shape);
+}
+
 } // namespace tensor
 

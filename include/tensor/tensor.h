@@ -210,6 +210,8 @@ public:
 
   TENSOR_DLL Tensor Cast(DataType dtype) const;
 
+  TENSOR_DLL Tensor Reshape(const std::vector<int>& new_shape) const;
+
   template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
   Tensor Fill(T val) {
     size_t num_bytes = sizeof(T);
