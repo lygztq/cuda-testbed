@@ -27,6 +27,24 @@ void ElemwiseCopyKernel(const Tensor& src, Tensor& dst) {
   memcpy(dst.RawPtr(), src.RawPtr(), size_in_bytes);
 }
 
+void CastCopyKernel(const Tensor& src, Tensor& dst) {
+  CHECK_EQ(src.GetDevice(), dst.GetDevice());
+  CHECK_EQ(src.GetDevice().type, DeviceType::kCPU);
+
+  TensorIterator iter;
+  iter.AddInput(src);
+  iter.AddOutput(dst);
+  iter.Build();
+
+  // this is an amazing double dtype dispatch...
+  DTYPE_SWITCH(dst.GetDataType(), [&](){
+    using dst_t = scalar_t;
+    DTYPE_SWITCH(src.GetDataType(), [&](){
+      CPUContiguousKernel(iter, [=](scalar_t elem) -> dst_t { return dtype_cast<scalar_t, dst_t, DeviceType::kCPU>::cast(elem); });
+    });
+  });
+}
+
 } // namespace cpu
 } // namespace ops
 } // namespace tensor

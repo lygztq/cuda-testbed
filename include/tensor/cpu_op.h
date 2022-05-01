@@ -18,15 +18,17 @@ void CPUContiguousKernel(TensorIterator& iter, Op&& elem_op) {
   constexpr size_t num_tensors = traits::arity + 1;
 
   std::array<char*, num_tensors> base_ptrs;
+  std::array<size_t, num_tensors> elem_sizes;
 
 #ifndef _MSC_VER
   #pragma unroll
 #endif
   for (size_t t = 0; t < num_tensors; ++t) {
     base_ptrs[t] = reinterpret_cast<char*>(iter.Tensors()[t].RawPtr());
+    elem_sizes[t] = iter.Tensors()[t].ElemSize();
   }
 
-  std::apply(elem_op, deference_loop<traits>(base_ptrs));
+  BasicLoopFunc<Op>(elem_op, base_ptrs.data(), elem_sizes.data(), num_elem);
 }
 
 template <typename Op>
@@ -42,6 +44,8 @@ TENSOR_DLL void ElemwiseCopyKernel(const Tensor& src, Tensor& dst);
 // This copy function will ignore and overwrite
 // the data layout of the destination tensor.
 TENSOR_DLL void CopyKernel(const Tensor& src, Tensor& dst);
+
+TENSOR_DLL void CastCopyKernel(const Tensor& src, Tensor& dst);
 
 template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
 void FillKernel(Tensor& tensor, T val) {

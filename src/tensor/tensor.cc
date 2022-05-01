@@ -101,18 +101,21 @@ Tensor Tensor::Empty(const std::vector<size_t>& shape,
   return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), dtype);
 }
 
-Tensor Tensor::SameAs(const Tensor& other, bool contiguous, Device device) {
-  if (device.IsEmpty()) {
-    device = other.GetDevice();
-  }
+Tensor Tensor::SameAs(const Tensor& other,
+                      bool contiguous,
+                      Device device,
+                      std::optional<DataType> dtype_opt) {
+  device = (device.IsEmpty()) ? other.GetDevice() : device;
+  DataType dtype = dtype_opt.value_or(other.GetDataType());
+
   auto shape = other.Shape();
   auto dptr = TensorStorage::AllocStorage(
-    other.NumElem() * DataTypeSize(other.GetDataType()), other.Alignment(), device);
+    other.NumElem() * DataTypeSize(dtype), other.Alignment(), device);
 
   if (contiguous)
-    return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), other.GetDataType());
+    return Tensor(dptr, shape, TensorShapeInfo::GenerateContiguousStride(shape), dtype);
   else
-    return Tensor(dptr, shape, other.Stride(), other.GetDataType());
+    return Tensor(dptr, shape, other.Stride(), dtype);
 }
 
 Tensor Tensor::Transfer(Device device) const {
@@ -237,6 +240,24 @@ Tensor Tensor::FillInBytes(Tensor& t, void* val, size_t num_bytes) {
       break;
   }
   return t;
+}
+
+Tensor Tensor::Cast(DataType dtype) const {
+  if (dtype == GetDataType()) return *this;
+
+  Tensor cast_res = Tensor::SameAs(*this, false, GetDevice(), dtype);
+  switch (GetDevice().type) {
+    case DeviceType::kCPU:
+      ops::cpu::CastCopyKernel(*this, cast_res);
+      break;
+    case DeviceType::kCUDA:
+      ops::cuda::CastCopyKernel(*this, cast_res);
+      break;
+    default:
+      LOG_ERROR << "Unsupported device type\n";
+      break;
+  }
+  return cast_res;
 }
 
 } // namespace tensor

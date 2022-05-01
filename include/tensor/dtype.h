@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include "tensor/fp16.h"
+#include "tensor/device.h"
 
 namespace tensor {
 
@@ -67,6 +68,14 @@ DEFINE_SUPPORT_CRT(double)
 template <typename T>
 inline constexpr bool support_crt_v = SupportCRT<T>::value;
 
+template <typename T1, typename T2, DeviceType XPU>
+struct dtype_cast {};
+
+template <typename T1, typename T2>
+struct dtype_cast<T1, T2, DeviceType::kCPU> {
+  static T2 cast(T1 src) { return static_cast<T2>(src); }
+};
+
 inline size_t DataTypeSize(DataType dtype) {
   switch (dtype) {
     case DataType::kInt8: case DataType::kUInt8:
@@ -99,6 +108,19 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kInt64,  int64_t, __VA_ARGS__)  \
     DTYPE_SWITCH_CASE(DataType::kUInt64, uint64_t, __VA_ARGS__) \
     DTYPE_SWITCH_CASE(DataType::kHalf,   fp16_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
+    DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
+  }
+
+#define DTYPE_SWITCH_WITHOUT_HALF(dtype, ...)                                \
+  DataType _st = DataType(dtype);                               \
+  switch (_st) {                                                \
+    DTYPE_SWITCH_CASE(DataType::kInt8,   int8_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kUInt8,  uint8_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kInt32,  int32_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt32, uint32_t, __VA_ARGS__) \
+    DTYPE_SWITCH_CASE(DataType::kInt64,  int64_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt64, uint64_t, __VA_ARGS__) \
     DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }

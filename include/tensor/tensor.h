@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <optional>
 #include "tensor/device.h"
 #include "tensor/macros.h"
 #include "tensor/dtype.h"
@@ -207,6 +208,8 @@ public:
   // can have one -1 for shape deduction
   TENSOR_DLL Tensor View(const std::vector<int>& view_shape) const;
 
+  TENSOR_DLL Tensor Cast(DataType dtype) const;
+
   template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
   Tensor Fill(T val) {
     size_t num_bytes = sizeof(T);
@@ -232,10 +235,10 @@ public:
 
   // create a new tensor with same shape/dtype/device info as another tensor
   // Note: the new tensor is contiguous is arg contiguous is true
-  TENSOR_DLL static Tensor SameAs(const Tensor& other, bool contiguous=false, Device device = Device::EmptyDevice());
-
-  // template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
-  // TENSOR_DLL static Tensor Full(const std::vector<size_t>& shape, T val, size_t alignment = 0, Device device = Device::DefaultDevice());
+  TENSOR_DLL static Tensor SameAs(const Tensor& other,
+                                  bool contiguous=false,
+                                  Device device = Device::EmptyDevice(),
+                                  std::optional<DataType> dtype = std::nullopt);
 
 private:
   // /* [TODO] */ void CopyFromTo();

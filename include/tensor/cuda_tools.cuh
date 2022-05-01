@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <cuda_runtime.h>
+#include <cuda_fp16.h>
 #include "tensor/common.h"
 #include "tensor/macros.h"
 
@@ -141,6 +142,39 @@ void FillKernelImpl(size_t N, T* dptr, T val) {
 
 } // namespace cuda
 } // namespace ops
+
+// TENSOR_HOST_DEVICE: actually these are only __device__ function, but we need to call it in a
+// __host__ __device__ lambda function. Why we use __host__ __device__ lambda? Because we need
+// its function_traits on CPU.
+template <typename T1, typename T2>
+struct dtype_cast<T1, T2, DeviceType::kCUDA> {
+  TENSOR_HOST_DEVICE static T2 cast(T1 src) { return static_cast<T2>(src); }
+};
+
+template <typename T>
+struct dtype_cast<T, fp16_t, DeviceType::kCUDA> {
+  TENSOR_HOST_DEVICE static fp16_t cast(T src) {
+    __half temp = __float2half_rn(static_cast<float>(src));
+    return *reinterpret_cast<fp16_t*>(&temp);
+  }
+};
+
+template <typename T>
+struct dtype_cast<fp16_t, T, DeviceType::kCUDA> {
+  TENSOR_HOST_DEVICE static T cast(fp16_t src) {
+    float temp = __half2float(
+      *reinterpret_cast<__half*>(&src));
+    return static_cast<T>(temp);
+  }
+};
+
+template <>
+struct dtype_cast<fp16_t, fp16_t, DeviceType::kCUDA> {
+  TENSOR_HOST_DEVICE static fp16_t cast(fp16_t src) {
+    return src;
+  }
+};
+
 } // namespace tensor
 
 #endif  // TENSOR_CUDA_TOOLS_CUH_

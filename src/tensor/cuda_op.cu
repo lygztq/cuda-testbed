@@ -34,6 +34,23 @@ template void FillKernel<uint16_t, nullptr>(Tensor& t, uint16_t val);
 template void FillKernel<uint32_t, nullptr>(Tensor& t, uint32_t val);
 template void FillKernel<uint64_t, nullptr>(Tensor& t, uint64_t val);
 
+void CastCopyKernel(const Tensor& src, Tensor& dst) {
+  CHECK_EQ(src.GetDevice(), dst.GetDevice());
+  CHECK_EQ(src.GetDevice().type, DeviceType::kCUDA);
+
+  TensorIterator iter;
+  iter.AddInput(src);
+  iter.AddOutput(dst);
+  iter.Build();
+
+  DTYPE_SWITCH(dst.GetDataType(), [&](){
+    using dst_t = scalar_t;
+    DTYPE_SWITCH(src.GetDataType(), [&](){
+      CUDAElemwiseKernel(iter, [] CUDA_LAMBDA (scalar_t elem) -> dst_t { return dtype_cast<scalar_t, dst_t, DeviceType::kCUDA>::cast(elem); });
+    });
+  });
+}
+
 } // namespace cuda
 } // namespace ops
 } // namespace tensor

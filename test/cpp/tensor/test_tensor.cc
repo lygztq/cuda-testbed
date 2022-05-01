@@ -112,6 +112,37 @@ TEST(TestTensor, TestFull) {
   }
 }
 
+TEST(TestTensor, TestCast) {
+  std::vector<size_t> shape{2,3,4};
+
+  // cpu
+  Tensor src = Tensor::Full(shape, 1.2f);
+  Tensor dst = src.Cast(DataType::kInt32);
+
+  int* dptr = dst.TypedPtr<int>();
+  for (int i = 0; i < dst.NumElem(); ++i) {
+    EXPECT_EQ(dptr[i], 1);
+  }
+
+  // cuda
+  Tensor src_cuda = Tensor::Full(shape, 3.14, 0, {DeviceType::kCUDA, 0});
+  Tensor dst_cuda = src_cuda.Cast(DataType::kUInt32).Transfer({DeviceType::kCPU, 0});
+
+  uint32_t* dptr_cuda = dst_cuda.TypedPtr<uint32_t>();
+  for (int i = 0; i < dst_cuda.NumElem(); ++i) {
+    EXPECT_EQ(dptr_cuda[i], 3);
+  }
+
+  // fp16 on cuda
+  Tensor src_fp16 = Tensor::Full(shape, fp16_t::FromHex(0x3c01), 0, {DeviceType::kCUDA, 0}); // ~1.001
+  Tensor dst_fp16 = src_fp16.Cast(DataType::kInt32).Transfer({DeviceType::kCPU, 0});
+
+  int* dptr_fp16 = dst_fp16.TypedPtr<int>();
+  for (int i = 0; i < dst_fp16.NumElem(); ++i) {
+    EXPECT_EQ(dptr[i], 1);
+  }
+}
+
 TEST(TestTensor, TestTranspose) {
   
 }
