@@ -1,3 +1,7 @@
+/*!
+ * \file device.h
+ * \brief Device management and memory allocation tools
+ */
 #ifndef TENSOR_DEVICE_H_
 #define TENSOR_DEVICE_H_
 
@@ -37,7 +41,7 @@ inline std::string GetDeviceName(DeviceType deviceType) {
       return "Empty";
     default:
       return "UNKNOWN";
-  } 
+  }
 }
 
 struct Device final {

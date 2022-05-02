@@ -1,3 +1,7 @@
+/*!
+ * \file macros.h
+ * \brief Useful macros used in tensor
+ */
 #ifndef TENSOR_MACROS_H_
 #define TENSOR_MACROS_H_
 

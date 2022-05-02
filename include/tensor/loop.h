@@ -1,3 +1,7 @@
+/*!
+ * \file loop.h
+ * \brief Loop abstract on CPU
+ */
 #ifndef TENSOR_LOOP_H_
 #define TENSOR_LOOP_H_
 
@@ -89,7 +93,7 @@ template <typename Op>
 decltype(auto) MakeLoop2d(Op&& op) {
   return Loop2d<Op>(std::forward<Op>(op));
 }
-  
+
 } // namespace cpu
 } // namespace ops
 } // namespace tensor

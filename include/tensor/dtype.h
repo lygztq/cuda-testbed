@@ -1,3 +1,7 @@
+/*!
+ * \file dtype.h
+ * \brief Data types supported by Tensor.
+ */
 #ifndef TENSOR_DTYPE_H_
 #define TENSOR_DTYPE_H_
 
@@ -112,7 +116,7 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
 
-#define DTYPE_SWITCH_WITHOUT_HALF(dtype, ...)                                \
+#define DTYPE_SWITCH_WITHOUT_HALF(dtype, ...)                   \
   DataType _st = DataType(dtype);                               \
   switch (_st) {                                                \
     DTYPE_SWITCH_CASE(DataType::kInt8,   int8_t, __VA_ARGS__)   \

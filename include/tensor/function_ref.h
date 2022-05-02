@@ -25,12 +25,13 @@
 
 namespace tensor {
 
-/// An efficient, type-erasing, non-owning reference to a callable. This is
-/// intended for use as the type of a function parameter that is not used
-/// after the function in question returns.
-///
-/// This class does not own the callable, so it is not in general safe to store
-/// a function_ref.
+/*!
+ * \brief An efficient, type-erasing, non-owning reference to a callable. This is
+ *        intended for use as the type of a function parameter that is not used
+ *        after the function in question returns.
+ * \note This class does not own the callable, so it is not in general safe to store
+ *       a function_ref.
+ */
 template <typename T>
 struct function_ref {};
 

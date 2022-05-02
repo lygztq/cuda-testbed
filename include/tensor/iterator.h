@@ -1,3 +1,7 @@
+/*!
+ * \file iterator.h
+ * \brief Tensor iterator and helper classes.
+ */
 #ifndef TENSOR_ITERATOR_H_
 #define TENSOR_ITERATOR_H_
 
@@ -63,11 +67,21 @@ private:
 };
 
 // https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/fcb4a74e-c6d4-4a20-94f9-1ad1669b429d/what-does-warning-c4251-class-needs-to-have-dll-interface-to-be-used-by-clients-of-class-mean
-// #ifdef _WIN32
-// #pragma warning(push)
-// #pragma warning(disable:4251)
-// #endif // _WIN32
+#ifdef _WIN32
+#pragma warning(push)
+#pragma warning(disable:4251)
+#endif // _WIN32
 
+/*!
+ * \brief TensorIterator is a helper class for element-wise operations, such as
+ *        arithmetic, comparisons, and trigonometric functions. It handles
+ *        broadcasting and type conversions of operands.
+ *
+ *        This is inspired by NumPy's Array Iterator API (NpyIter) and TensorIterator
+ *        in Pytorch.
+ *
+ *        The files Loops.h provide functions to build kernels that use TensorIterator.
+ */
 class TensorIterator {
   using loop2d_t = function_ref<void(char**, const size_t*, size_t, size_t)>;
 
@@ -75,21 +89,21 @@ public:
   TensorIterator() = default;
 
   TENSOR_DLL void ForEach(loop2d_t loop);
-  
+
   TENSOR_DLL void FixTensors();
-  
+
   TENSOR_DLL void BroadcastShape();
-  
+
   TENSOR_DLL void InitShape();
-  
+
   TENSOR_DLL void CompressShape();
-  
+
   TENSOR_DLL void Build();
-  
+
   void AddInput(const Tensor& t) { in_tensors_.emplace_back(t); }
-  
+
   void AddOutput(const Tensor& t) { out_tensors_.emplace_back(t); }
-  
+
   size_t NumTensors() const {
     return NumInTensors() + NumOutTensors();
   }
@@ -99,7 +113,7 @@ public:
   size_t NumOutTensors() const {
     return has_fixed_tensor_ ? num_out_tensors_ : out_tensors_.size();
   }
-  
+
   // attributes
   const std::vector<size_t>& Shape() const { return shape_; }
 
@@ -110,7 +124,7 @@ public:
   std::vector<TensorRef>& Tensors() { return tensors_; }
 
   size_t NumAxes() const { return shape_.size(); }
-  
+
   size_t NumElem() const {
     return common::ShapeNumElem(shape_);
   }
@@ -141,9 +155,9 @@ private:
   bool has_compressed_ = false;
 };
 
-// #ifdef _WIN32
-// #pragma warning(pop)
-// #endif // _WIN32
+#ifdef _WIN32
+#pragma warning(pop)
+#endif // _WIN32
 
 } // namespace tensor
 

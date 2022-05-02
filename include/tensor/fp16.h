@@ -1,5 +1,6 @@
 /*!
  * \file half.h
+ * \brief A CPU implementation of IEEE-754 Half-Precision Floating-Point
  */
 #ifndef TENSOR_FP16_H_
 #define TENSOR_FP16_H_

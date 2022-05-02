@@ -1,3 +1,7 @@
+/*!
+ * \file traits.h
+ * \brief Type traits used in tensor.
+ */
 #ifndef TENSOR_TRAITS_H_
 #define TENSOR_TRAITS_H_
 
@@ -35,7 +39,7 @@ struct function_traits<R(Args...)> {
   static constexpr size_t arity = sizeof...(Args);
   using return_t = R;
   using args_t_tuple = typename std::tuple<Args...>;
-  
+
   template <size_t i>
   struct arg {
     using type = typename std::tuple_element_t<i, args_t_tuple>;

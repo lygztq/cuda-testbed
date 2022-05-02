@@ -1,5 +1,9 @@
-#ifndef TENSOR_H_
-#define TENSOR_H_
+/*!
+ * \file tensor.h
+ * \brief Tensor and TensorRef
+ */
+#ifndef TENSOR_TENSOR_H_
+#define TENSOR_TENSOR_H_
 
 #include <array>
 #include <vector>
@@ -12,8 +16,6 @@
 #include "tensor/common.h"
 
 namespace tensor {
-
-// static Device DefaultDevice_{DeviceType::kCPU, 0};
 
 // forward decl
 class Tensor;
@@ -81,7 +83,7 @@ public:
   TensorShapeInfo() = default;
   TENSOR_DLL explicit TensorShapeInfo(
     const std::vector<size_t>& shape, const std::vector<size_t>& stride);
-  
+
   // argument getters
   size_t NumAxes() const { return num_axes_; }
   size_t Shape(size_t i) const { CHECK_LT(i, num_axes_); return shape_[i]; }
@@ -92,7 +94,7 @@ public:
   TENSOR_DLL std::vector<size_t> Stride() const;
   const std::array<size_t, kMaxTensorAxis>& StrideRef() const { return stride_; }
   std::array<size_t, kMaxTensorAxis>& StrideRef() { return stride_; }
-  
+
   TENSOR_DLL std::vector<size_t> StrideInBytes(size_t dtype_size, size_t alignment = 0) const;
   TENSOR_DLL std::vector<size_t> ShapeInBytes(size_t dtype_size, size_t alignment = 0) const;
 
@@ -138,9 +140,6 @@ void ElemCountToByteCount(std::vector<size_t>& elem_shape) {
   std::for_each(elem_shape.begin(), elem_shape.end(), [](size_t &c) { c *= sizeof(T); });
 }
 
-#ifdef _WIN32
-// template class TENSOR_DLL std::shared_ptr<TensorStorage>;
-#endif // _WIN32
 class Tensor final {
   friend TensorRef;
   HAVE_SHAPE_INFO
@@ -152,26 +151,26 @@ public:
     : storage_(storage), shape_info_(shape, stride), dtype_(dtype) {}
 
   Tensor(const Tensor &) = default;
-  
+
   Tensor(Tensor && other)
     : storage_(std::move(other.storage_))
     , shape_info_(std::move(other.shape_info_))
     , dtype_(other.dtype_) {}
-  
+
   friend void swap(Tensor& t1, Tensor& t2) {
     using std::swap;
     swap(t1.storage_, t2.storage_);
     swap(t1.shape_info_, t2.shape_info_);
     swap(t1.dtype_, t2.dtype_);
   }
-  
+
   Tensor& operator=(const Tensor& other) {
     using std::swap;
     auto tmp(other);
     swap(tmp, *this);
     return *this;
   }
-  
+
   Tensor& operator=(Tensor&& other) {
     using std::swap;
     auto tmp(std::move(other));
@@ -203,7 +202,7 @@ public:
 
   // transfer data of a tensor to another device, return a new tensor
   TENSOR_DLL Tensor Transfer(Device device) const;
-  
+
   // Returns a new tensor with the same data as the self tensor but of a different shape.
   // can have one -1 for shape deduction
   TENSOR_DLL Tensor View(const std::vector<int>& view_shape) const;
@@ -216,15 +215,6 @@ public:
   Tensor Fill(T val) {
     size_t num_bytes = sizeof(T);
     return Tensor::FillInBytes(*this, reinterpret_cast<void*>(&val), num_bytes);
-  }
-
-  template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
-  static Tensor Full(const std::vector<size_t>& shape,
-                     T val,
-                     size_t alignment = 0,
-                     Device device = Device::DefaultDevice()) {
-    Tensor new_tensor = Tensor::Empty(shape, crt_to_dtype_v<T>, alignment, device);
-    return new_tensor.Fill(val);
   }
 
   TENSOR_DLL static Tensor FillInBytes(Tensor& t, void* val, size_t num_bytes);
@@ -250,17 +240,22 @@ public:
                                   Device device = Device::EmptyDevice(),
                                   std::optional<DataType> dtype = std::nullopt);
 
+  template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+  static Tensor Full(const std::vector<size_t>& shape,
+                     T val,
+                     size_t alignment = 0,
+                     Device device = Device::DefaultDevice()) {
+    Tensor new_tensor = Tensor::Empty(shape, crt_to_dtype_v<T>, alignment, device);
+    return new_tensor.Fill(val);
+  }
+
 private:
-  // /* [TODO] */ void CopyFromTo();
   std::shared_ptr<TensorStorage> storage_;
   DataType dtype_;
 };
 
 // This reference is valid when the referred Tensor object is alive.
 // But this is not safe if the referred object is dead.
-#ifdef _WIN32
-template class TENSOR_DLL std::weak_ptr<TensorStorage>;
-#endif // _WIN32
 class TENSOR_DLL TensorRef final {
   HAVE_SHAPE_INFO
 public:
@@ -304,7 +299,7 @@ private:
   std::weak_ptr<TensorStorage> storage_ref_;
   DataType dtype_;
 };
-  
+
 } // namespace tensor
 
-#endif // TENSOR_H_
+#endif // TENSOR_TENSOR_H_

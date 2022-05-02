@@ -1,3 +1,7 @@
+/*!
+ * \file cuda_tools.cuh
+ * \brief Tools for implementing CUDA operator kernels
+ */
 #ifndef TENSOR_CUDA_TOOLS_CUH_
 #define TENSOR_CUDA_TOOLS_CUH_
 
@@ -22,6 +26,18 @@ invoke_impl(const func_t &f, char *const *data, const index_t *strides, int i,
   return f(*(typename traits::template arg<INDEX>::type*)(data[INDEX] + i * strides[INDEX])...);
 }
 
+/*!
+ * \brief Invoke functions on type-erased tensor data.
+ *
+ * \tparam func_t Type of the function to be invoked
+ * \tparam index_t Tensor index type
+ * \tparam traits Function traits of \a func_t
+ * \param f The function to be invoked
+ * \param data Type-erased data pointers of given tensors
+ * \param strides Strides of tensors
+ * \param i Index value
+ * \return Result of the function.
+ */
 template <typename func_t, typename index_t, typename traits = function_traits<func_t>>
 TENSOR_HOST_DEVICE typename traits::return_t
 invoke(const func_t &f, char *const *data, const index_t *strides, int i) {
@@ -29,16 +45,19 @@ invoke(const func_t &f, char *const *data, const index_t *strides, int i) {
   return invoke_impl<traits>(f, data, strides, i, Indices{});
 }
 
-// template <typename func_t, typename index_t, typename traits = function_traits<func_t>>
-// TENSOR_HOST_DEVICE void
-// foo(const func_t& f, char *const *data, const index_t *strides, int i) {}
-
+/*!
+ * \brief Helper for computing linear offsets of tensors with different
+ *        memory layouts in a cuda thread. This class is helpful when
+ *        performing element-wise operation on these tensors.
+ *
+ * \tparam NARGS Number of tensors involved in this element-wise operation.
+ */
 template <size_t NARGS>
 struct OffsetCalculator {
   OffsetCalculator(size_t num_axes,
                    const std::vector<size_t>& shape,
                    const std::vector<size_t>& strides,
-                   const std::array<size_t, NARGS>& elem_size) 
+                   const std::array<size_t, NARGS>& elem_size)
     : num_axes_(num_axes) {
     CHECK_LE(num_axes, kMaxTensorAxis);
 

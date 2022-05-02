@@ -1,3 +1,7 @@
+/*!
+ * \file cuda_op.h
+ * \brief CUDA implementation of tensor operator kernels
+ */
 #ifndef TENSOR_CUDA_OP_H_
 #define TENSOR_CUDA_OP_H_
 
@@ -12,7 +16,14 @@ namespace tensor {
 namespace ops {
 namespace cuda {
 
-// this kernel is for contiguous tensors
+/*!
+ * \brief Element-wise operation on \b contiguous tensors.
+ *
+ * \tparam Op The type of \a 'op'
+ * \param iter The tensor iterator used for element-wise loop.
+ * \param op A callable object. The element-wise operation to be performed.
+ * \note This kernel is for contiguous tensors
+ */
 template <typename Op>
 void CUDAContiguousKernel(TensorIterator& iter, Op&& op) {
   CHECK(iter.Valid());
@@ -41,6 +52,13 @@ void CUDAContiguousKernel(TensorIterator& iter, Op&& op) {
   });
 }
 
+/*!
+ * \brief Element-wise operation on tensors.
+ *
+ * \tparam Op The type of \a 'op'
+ * \param iter The tensor iterator used for element-wise loop.
+ * \param op A callable object. The element-wise operation to be performed.
+ */
 template <typename Op>
 void CUDAElemwiseKernel(TensorIterator& iter, Op&& op) {
   CHECK(iter.Valid());
@@ -79,18 +97,40 @@ void CUDAElemwiseKernel(TensorIterator& iter, Op&& op) {
   });
 }
 
-// This copy function will ignore and overwrite
-// the data layout of the destination tensor.
+/*!
+ * \brief Copy elements from \a `src` tensor to \a 'dst' tensor.
+ *        Src and dst must in the same device and with the same dtype.
+ *
+ * \param src The source tensor
+ * \param dst The destination tensor
+ * \note This copy function will ignore and overwrite
+ *       the data layout of the destination tensor.
+ */
 TENSOR_DLL void CopyKernel(const Tensor& src, Tensor& dst);
 
+/*!
+ * \brief Fill a tensor with the given value.
+ *
+ * \tparam T Type of the given value.
+ * \param tensor The tensor to be filled.
+ * \param val The value used for filling tensors.
+ * \note Type \a T must match dtype of the given tensor.
+ */
 template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
 TENSOR_DLL void FillKernel(Tensor& tensor, T val);
 
+/*!
+ * \brief Copy elements in \a 'src' to \a 'dst'. Cast the dtype
+ *        if needed.
+ *
+ * \param src The source tensor
+ * \param dst The destination tensor
+ * \note This kernel is only valid on tensors with the same shape and stride.
+ */
 TENSOR_DLL void CastCopyKernel(const Tensor& src, Tensor& dst);
 
 } // namespace cuda
 } // namespace ops
 } // namespace tensor
-
 
 #endif  // TENSOR_CUDA_OP_H_
