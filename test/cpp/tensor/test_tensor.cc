@@ -143,10 +143,45 @@ TEST(TestTensor, TestCast) {
   }
 }
 
+TEST(TestTensor, TestReshape) {
+  // cpu
+  std::vector<size_t> shape{2,3,4};
+  Tensor t = Tensor::Ones(shape, DataType::kDouble);
+  Tensor t_t = t.Transpose({2,1,0});
+  EXPECT_FALSE(t_t.IsContiguous());
+  Tensor t_reshape = t_t.Reshape({2, -1});
+  EXPECT_EQ(t_reshape.Shape(1), 12);
+  EXPECT_TRUE(t_reshape.IsContiguous());
+
+  // cuda
+  Tensor t_cuda = Tensor::Ones(shape, DataType::kFloat, {DeviceType::kCUDA, 0});
+  Tensor t_cuda_t = t_cuda.Transpose({2,1,0});
+  EXPECT_FALSE(t_cuda_t.IsContiguous());
+  Tensor t_cuda_reshape = t_cuda_t.Reshape({3, -1});
+  EXPECT_EQ(t_cuda_reshape.Shape(1), 8);
+  EXPECT_TRUE(t_cuda_reshape.IsContiguous());
+}
+
 TEST(TestTensor, TestTranspose) {
-  
+  std::vector<size_t> shape{2,3,4,5};
+  Tensor t = Tensor::Ones(shape, DataType::kDouble);
+  t.Transpose_({2,3,1,0});
+
+  auto& t_shape = t.ShapeRef();
+  std::vector<size_t> shape_t{4,5,3,2};
+  for (int i = 0; i < t.NumAxes(); ++i) {
+    EXPECT_EQ(t_shape[i], shape_t[i]);
+  }
 }
 
 TEST(TestTensor, TestView) {
+  std::vector<size_t> shape{2,3,4};
+  Tensor t = Tensor::Ones(shape, DataType::kDouble);
+  auto t_view = t.View({-1});
 
+  EXPECT_EQ(t_view.Shape(0), 24);
+  EXPECT_TRUE(t_view.IsContiguous());
+
+  t.Transpose_(0, 2);
+  EXPECT_ANY_THROW(t.View({-1}));
 }
