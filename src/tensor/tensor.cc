@@ -265,5 +265,25 @@ Tensor Tensor::Reshape(const std::vector<int>& new_shape) const {
   else return this->Contiguous().View(new_shape);
 }
 
+Tensor Tensor::Ones(const std::vector<size_t>& shape,
+                    DataType dtype,
+                    Device device) {
+  Tensor new_tensor = Tensor::Empty(shape, dtype, 0, device);
+  DTYPE_SWITCH(dtype, [&](){
+    new_tensor.Fill(static_cast<scalar_t>(1));
+  });
+  return new_tensor;
+}
+
+Tensor Tensor::Zeros(const std::vector<size_t>& shape,
+                     DataType dtype,
+                     Device device) {
+  Tensor new_tensor = Tensor::Empty(shape, dtype, 0, device);
+  DTYPE_SWITCH(dtype, [&](){
+    new_tensor.Fill(static_cast<scalar_t>(0));
+  });
+  return new_tensor;
+}
+
 } // namespace tensor
 

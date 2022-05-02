@@ -235,6 +235,14 @@ public:
                                  size_t alignment = 0,
                                  Device device = Device::DefaultDevice());
 
+  TENSOR_DLL static Tensor Ones(const std::vector<size_t>& shape,
+                                DataType dtype,
+                                Device device = Device::DefaultDevice());
+
+  TENSOR_DLL static Tensor Zeros(const std::vector<size_t>& shape,
+                                 DataType dtype,
+                                 Device device = Device::DefaultDevice());
+
   // create a new tensor with same shape/dtype/device info as another tensor
   // Note: the new tensor is contiguous is arg contiguous is true
   TENSOR_DLL static Tensor SameAs(const Tensor& other,
