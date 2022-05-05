@@ -1,0 +1,13 @@
+file(GLOB MATMUL_SOURCE_LIST "${CMAKE_SOURCE_DIR}/src/matmul/*.cc")
+file(GLOB MATMUL_SOURCE_CU_LIST "${CMAKE_SOURCE_DIR}/src/matmul/*.cu")
+list(APPEND MATMUL_SOURCE_LIST ${MATMUL_SOURCE_CU_LIST})
+
+foreach(sourcefile ${MATMUL_SOURCE_LIST})
+  string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/matmul/(.*)\.c[cu]" "matmul_\\1" execname ${sourcefile})
+  message(STATUS "MatMul: Build executable ${execname}")
+  add_executable(${execname} ${sourcefile})
+  add_dependencies(${execname} tensor)
+  target_include_directories(${execname} PUBLIC "${CMAKE_SOURCE_DIR}/include")
+  target_include_directories(${execname} PUBLIC "${CMAKE_SOURCE_DIR}/third_party/FP16/include")
+  target_link_libraries(${execname} tensor)
+endforeach(sourcefile ${MATMUL_SOURCE_LIST})

@@ -55,6 +55,10 @@ endif()
 file(TOUCH_NOCREATE "${CMAKE_SOURCE_DIR}/src/tensor/CMakeLists.txt")
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/tensor")
 
+# matmul
+file(TOUCH_NOCREATE "${CMAKE_SOURCE_DIR}/src/matmul/CMakeLists.txt")
+add_subdirectory("${CMAKE_SOURCE_DIR}/src/matmul")
+
 if(BUILD_TEST)
   message(STATUS "Build with unittest")
   add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/googletest")
