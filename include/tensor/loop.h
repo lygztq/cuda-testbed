@@ -25,13 +25,15 @@ void BasicLoopFunc(const Op &op,
   // we assume the first tensor is the output tensor
   auto optr = reinterpret_cast<typename trait::return_t*>(dptrs[0]);
 
-// https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+#ifdef USE_OPENMP
+  #pragma omp parallel for
+#else  // USE_OPENMP
 #ifdef _MSC_VER
-#pragma loop(hint_parallel(4))
-#else // _MSC_VER
-#pragma unroll
-#endif //_MSC_VER
-  for (size_t i = 0; i < N; ++i) {
+  // https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+  #pragma loop(hint_parallel(4))
+#endif // _MSC_VER
+#endif // USE_OPENMP
+  for (int i = 0; i < N; ++i) {
     optr[i] = std::apply(op, deference<trait>(&dptrs[1], &strides[1], i));
   }
 }
@@ -46,13 +48,15 @@ void BasicLoopFunc(const Op &op,
                    size_t N) {
   using trait = function_traits<Op>;
 
-// https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+#ifdef USE_OPENMP
+  #pragma omp parallel for
+#else  // USE_OPENMP
 #ifdef _MSC_VER
-#pragma loop(hint_parallel(4))
-#else // _MSC_VER
-#pragma unroll
-#endif //_MSC_VER
-  for (size_t i = 0; i < N; ++i) {
+  // https://docs.microsoft.com/en-us/cpp/preprocessor/loop?view=msvc-170
+  #pragma loop(hint_parallel(4))
+#endif // _MSC_VER
+#endif // USE_OPENMP
+  for (int i = 0; i < N; ++i) {
     std::apply(op, deference<trait>(&dptrs[0], &strides[0], i));
   }
 }

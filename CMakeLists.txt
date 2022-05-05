@@ -5,6 +5,7 @@ project(CUDATestBed VERSION 0.1
                     LANGUAGES CXX CUDA)
 
 option(BUILD_TEST "whether build test for this project or not" ON)
+option(ENABLE_OPENMP "whether use openmp" ON)
 option(DEBUG "debug mode" OFF)
 
 
@@ -24,6 +25,16 @@ if (MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # multi-thread compile
 endif(MSVC)
+
+if (ENABLE_OPENMP)
+  add_definitions(-DUSE_OPENMP)
+  message(STATUS "Enable OpenMP")
+  if (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
+  else (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  endif (MSVC)
+endif (ENABLE_OPENMP)
 
 # use cuda
 include(CheckLanguage)
