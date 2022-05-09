@@ -6,6 +6,7 @@
 #define TENSOR_TENSOR_H_
 
 #include <array>
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <utility>
