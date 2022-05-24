@@ -129,6 +129,43 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
 
+class Scalar {
+public:
+  template <typename T>
+  Scalar(T val) : dtype_(crt_to_dtype_v<T>), val_(*reinterpret_cast<uint64_t*>(&val)) {}
+
+  template <typename T>
+  T GetValue() const {
+    CHECK_EQ(dtype_, crt_to_dtype_v<T>) << "Wrong type\n";
+    return *reinterpret_cast<const T*>(&val_);
+  }
+
+#define DECL_TYPE(type) \
+  operator type() const { \
+    type ret = 0; \
+    DTYPE_SWITCH(dtype_, [&ret, this](){ ret = static_cast<type>(*reinterpret_cast<const scalar_t*>(&this->val_)); }); \
+    return ret; \
+  }
+
+  DECL_TYPE(float)
+  DECL_TYPE(double)
+  DECL_TYPE(uint32_t)
+  DECL_TYPE(int32_t)
+  DECL_TYPE(uint64_t)
+  DECL_TYPE(int64_t)
+  DECL_TYPE(uint8_t)
+  DECL_TYPE(int8_t)
+#undef DECL_TYPE
+
+  DataType GetType() const {
+    return dtype_;
+  }
+
+private:
+  DataType dtype_;
+  uint64_t val_;
+};
+
 } // namespace tensor
 
 #endif  // TENSOR_DTYPE_H_
