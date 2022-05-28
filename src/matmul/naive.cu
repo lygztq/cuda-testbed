@@ -9,9 +9,9 @@ using tensor::Tensor;
 __global__ void naive_matmul_kernel(float* RESTRICT a,
                                     float* RESTRICT b,
                                     float* RESTRICT c,
-                                    int M,
-                                    int K,
-                                    int N) {
+                                    size_t M,
+                                    size_t K,
+                                    size_t N) {
   int gidx = threadIdx.x + blockDim.x * blockIdx.x;
   int midx = gidx / N;
   int nidx = gidx % N;
