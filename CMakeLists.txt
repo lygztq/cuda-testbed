@@ -4,6 +4,18 @@ project(CUDATestBed VERSION 0.1
                     DESCRIPTION "Personal CUDA test bed"
                     LANGUAGES CXX CUDA)
 
+if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
+  include(${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
+else()
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.cmake)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.cmake)
+  endif()
+endif()
+
+# NOTE: do not modify this file to change option values.
+# You can create a config.cmake at build folder
+# and add set(OPTION VALUE) to override these build options.
+# Alernatively, use cmake -DOPTION=VALUE through command-line
 option(BUILD_TEST "whether build test for this project or not" ON)
 option(ENABLE_OPENMP "whether use openmp" ON)
 option(DEBUG "debug mode" OFF)
@@ -24,7 +36,7 @@ if (MSVC)
   # https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP") # multi-thread compile
-endif(MSVC)
+endif (MSVC)
 
 if (ENABLE_OPENMP)
   add_definitions(-DUSE_OPENMP)
