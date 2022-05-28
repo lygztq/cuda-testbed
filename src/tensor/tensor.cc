@@ -272,6 +272,9 @@ Tensor Tensor::Uniform(const std::vector<size_t>& shape,
                        Scalar high,
                        DataType dtype,
                        Device device) {
+  CHECK(dtype == DataType::kDouble ||
+        dtype == DataType::kFloat ||
+        dtype == DataType::kHalf) << "Only floating point type is supported.\n";
   Tensor new_tensor = Tensor::Empty(shape, dtype, 0, device);
   switch (device.type) {
     case DeviceType::kCPU:
