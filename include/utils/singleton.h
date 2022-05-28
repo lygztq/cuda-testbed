@@ -6,7 +6,7 @@ namespace utils {
 template <typename T>
 class ThreadSingleton {
 public:
-  static T& GetThreadLocal() const {
+  static T& GetThreadLocal() {
     static thread_local T obj;
     return obj;
   }
@@ -15,7 +15,7 @@ public:
 template <typename T>
 class GlobalSingleton {
 public:
-  static T& GetThreadLocal() const {
+  static T& GetThreadLocal() {
     static T obj;
     return obj;
   }

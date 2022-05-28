@@ -4,6 +4,7 @@
 #include <random>
 #include "utils/thread.h"
 #include "utils/singleton.h"
+#include "utils/logging.h"
 
 namespace utils {
 
