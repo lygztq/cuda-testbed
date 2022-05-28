@@ -87,6 +87,8 @@ TENSOR_DLL void CopyKernel(const Tensor& src, Tensor& dst);
  */
 TENSOR_DLL void CastCopyKernel(const Tensor& src, Tensor& dst);
 
+TENSOR_DLL void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high);
+
 /*!
  * \brief Fill a tensor with the given value.
  * 
@@ -110,7 +112,7 @@ void FillKernel(Tensor& tensor, T val) {
 }
 
 } // namespace cpu
-}   // namespace ops
+} // namespace ops
 } // namespace tensor
 
 #endif // TENSOR_CPU_OP_H_

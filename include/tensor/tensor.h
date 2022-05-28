@@ -226,6 +226,12 @@ public:
                                  size_t alignment = 0,
                                  Device device = Device::DefaultDevice());
 
+  TENSOR_DLL static Tensor Uniform(const std::vector<size_t>& shape,
+                                   Scalar low,
+                                   Scalar high,
+                                   DataType dtype = DataType::kDouble,
+                                   Device device = Device::DefaultDevice());
+
   TENSOR_DLL static Tensor Ones(const std::vector<size_t>& shape,
                                 DataType dtype,
                                 Device device = Device::DefaultDevice());

@@ -267,6 +267,25 @@ Tensor Tensor::Reshape(const std::vector<int>& new_shape) const {
   else return this->Contiguous().View(new_shape);
 }
 
+Tensor Tensor::Uniform(const std::vector<size_t>& shape,
+                       Scalar low,
+                       Scalar high,
+                       DataType dtype,
+                       Device device) {
+  Tensor new_tensor = Tensor::Empty(shape, dtype, 0, device);
+  switch (device.type) {
+    case DeviceType::kCPU:
+      ops::cpu::RandomUniformKernel(new_tensor, low, high);
+      break;
+    case DeviceType::kCUDA:
+      break;
+    default:
+      LOG_ERROR << "unknown device type\n";
+      break;
+  }
+  return new_tensor; 
+}
+
 Tensor Tensor::Ones(const std::vector<size_t>& shape,
                     DataType dtype,
                     Device device) {

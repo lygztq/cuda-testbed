@@ -1,5 +1,6 @@
 #include <cstring>
 #include "tensor/cpu_op.h"
+#include "utils/random.h"
 
 namespace tensor {
 namespace ops {
@@ -43,6 +44,34 @@ void CastCopyKernel(const Tensor& src, Tensor& dst) {
       CPUContiguousKernel(iter, [=](scalar_t elem) -> dst_t { return dtype_cast<scalar_t, dst_t, DeviceType::kCPU>::cast(elem); });
     });
   });
+}
+
+template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+void RandomUniformKernelImpl(Tensor& tensor, T low, T high) {
+  T* dptr = tensor.TypedPtr<T>();
+  size_t num_elem = tensor.NumElem();
+  auto& generator = utils::RandomEngine::ThreadLocal();
+
+  for (size_t i = 0; i < num_elem; ++i) {
+    dptr[i] = generator.Uniform<T>(low, high);
+  }
+}
+
+template <>
+void RandomUniformKernelImpl<fp16_t>(Tensor& tensor, fp16_t low, fp16_t high) {
+  fp16_t* dptr = tensor.TypedPtr<fp16_t>();
+  size_t num_elem = tensor.NumElem();
+  auto& generator = utils::RandomEngine::ThreadLocal();
+
+  for (size_t i = 0; i < num_elem; ++i) {
+    dptr[i] = static_cast<fp16_t>(generator.Uniform<float>(static_cast<float>(low), static_cast<float>(high)));
+  }
+}
+
+void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high) {
+  DTYPE_SWITCH_FLOAT(tensor.GetDataType(), [&](){
+    RandomUniformKernelImpl<scalar_t>(tensor, static_cast<scalar_t>(low), static_cast<scalar_t>(high));
+  })
 }
 
 } // namespace cpu
