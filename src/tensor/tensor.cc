@@ -143,6 +143,7 @@ Tensor Tensor::Contiguous() const {
       ops::cuda::CopyKernel(*this, contiguous);
       break;
     default:
+      LOG_ERROR << "unknown device type\n";
       break;
   }
 
@@ -216,6 +217,7 @@ Tensor FillImpl(Tensor& t, T val) {
       ops::cuda::FillKernel<T>(t, val);
       break;
     default:
+      LOG_ERROR << "unknown device type\n";
       break;
   }
   return t;
@@ -254,7 +256,7 @@ Tensor Tensor::Cast(DataType dtype) const {
       ops::cuda::CastCopyKernel(*this, cast_res);
       break;
     default:
-      LOG_ERROR << "Unsupported device type\n";
+      LOG_ERROR << "unknown device type\n";
       break;
   }
   return cast_res;

@@ -6,6 +6,7 @@
 #define TENSOR_DEVICE_H_
 
 #include <string>
+#include <cuda_runtime.h>
 #include "utils/logging.h"
 #include "tensor/macros.h"
 
