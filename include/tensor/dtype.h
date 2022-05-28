@@ -6,6 +6,7 @@
 #define TENSOR_DTYPE_H_
 
 #include <cstdint>
+#include <type_traits>
 #include "tensor/fp16.h"
 #include "tensor/device.h"
 
@@ -129,16 +130,67 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
 
+template <typename T>
+struct is_floatint_point {
+  static constexpr bool value = false;
+};
+
+#define IS_FLOATINT_POINT_CASE(type)  \
+template <>                           \
+struct is_floatint_point<type> {      \
+  static constexpr bool value = true; \
+}
+IS_FLOATINT_POINT_CASE(float);
+IS_FLOATINT_POINT_CASE(double);
+IS_FLOATINT_POINT_CASE(fp16_t);
+#undef IS_FLOATINT_POINT_CASE
+
+template <typename T>
+struct is_signed_integral {
+  static constexpr bool value = false;
+};
+
+#define IS_SIGNED_INTEGRAL_CASE(type) \
+template <>                           \
+struct is_signed_integral<type> {     \
+  static constexpr bool value = true; \
+}
+IS_SIGNED_INTEGRAL_CASE(int8_t);
+IS_SIGNED_INTEGRAL_CASE(int32_t);
+IS_SIGNED_INTEGRAL_CASE(int64_t);
+#undef IS_SIGNED_INTEGRAL_CASE
+
+template <typename T>
+struct is_unsigned_integral {
+  static constexpr bool value = false;
+};
+
+#define IS_UNSIGNED_INTEGRAL_CASE(type) \
+template <>                             \
+struct is_unsigned_integral<type> {     \
+  static constexpr bool value = true;   \
+}
+IS_UNSIGNED_INTEGRAL_CASE(uint8_t);
+IS_UNSIGNED_INTEGRAL_CASE(uint32_t);
+IS_UNSIGNED_INTEGRAL_CASE(uint64_t);
+#undef IS_UNSIGNED_INTEGRAL_CASE
+
 class Scalar {
 public:
-  template <typename T>
-  Scalar(T val) : dtype_(crt_to_dtype_v<T>), val_(*reinterpret_cast<uint64_t*>(&val)) {}
-
-  template <typename T>
-  T GetValue() const {
-    CHECK_EQ(dtype_, crt_to_dtype_v<T>) << "Wrong type\n";
-    return *reinterpret_cast<const T*>(&val_);
+  template <typename T, std::enable_if_t<is_floatint_point<T>::value>* = nullptr>
+  Scalar(T val) : dtype_(DataType::kDouble) {
+    double tmp = static_cast<double>(val);
+    val_ = *reinterpret_cast<uint64_t*>(&tmp);
   }
+
+  template <typename T, std::enable_if_t<is_signed_integral<T>::value>* = nullptr>
+  Scalar(T val) : dtype_(DataType::kInt64) {
+    int64_t tmp = static_cast<int64_t>(val);
+    val_ = *reinterpret_cast<uint64_t*>(&tmp);
+  }
+
+  template <typename T, std::enable_if_t<is_unsigned_integral<T>::value>* = nullptr>
+  Scalar(T val) : dtype_(DataType::kUInt64), val_(static_cast<uint64_t>(val)) {}
 
 #define DECL_TYPE(type) \
   operator type() const { \

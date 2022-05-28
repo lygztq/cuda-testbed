@@ -96,10 +96,70 @@ TEST(TestDType, TestFP32To16) {
 
 TEST(TestDType, TestTypeConvert) {
   // double to fp16
-  fp16_t d_to_h = static_cast<fp16_t>(1.0);
+  fp16_t d_to_h = static_cast<fp16_t>((double)(1.0));
   EXPECT_EQ(static_cast<double>(d_to_h), 1.0);
 
   // int to fp16
-  fp16_t i_to_h = static_cast<fp16_t>(24);
+  fp16_t i_to_h = static_cast<fp16_t>((int)(24));
   EXPECT_EQ(static_cast<int>(i_to_h), 24);
 }
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4305)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4756)
+#endif
+TEST(TestDtype, TestScalar) {
+  using tensor::Scalar;
+  uint8_t uint8_val = 1;
+  uint32_t uint32_val = 2;
+  uint64_t uint64_val = 3;
+  int8_t int8_val = 4;
+  int32_t int32_val = 5;
+  int64_t int64_val = 6;
+  fp16_t fp16_val = 7.1;
+  float float_val = 8.1f;
+  double double_val = 9.1;
+  uint64_t very_big_int_val = std::numeric_limits<uint64_t>::max();
+  double very_big_float_val = std::numeric_limits<double>::max();
+
+  Scalar uint8_scalar(uint8_val);
+  Scalar uint32_scalar(uint32_val);
+  Scalar uint64_scalar(uint64_val);
+  Scalar int8_scalar(int8_val);
+  Scalar int32_scalar(int32_val);
+  Scalar int64_scalar(int64_val);
+  Scalar fp16_scalar(fp16_val);
+  Scalar float_scalar(float_val);
+  Scalar double_scalar(double_val);
+  Scalar very_big_int(very_big_int_val);
+  Scalar very_big_float(very_big_float_val);
+  
+  // uint8 scalar
+  EXPECT_EQ((int8_t)(uint8_scalar), (int8_t)(uint8_val));
+  EXPECT_EQ((uint32_t)(uint8_scalar), (uint32_t)(uint8_val));
+  EXPECT_EQ((uint64_t)(uint8_scalar), (uint64_t)(uint8_val));
+  EXPECT_EQ((int32_t)(uint8_scalar), (int32_t)(uint8_val));
+  EXPECT_EQ((int64_t)(uint8_scalar), (int64_t)(uint8_val));
+  EXPECT_EQ((fp16_t)(uint8_scalar), (fp16_t)(uint8_val));
+  EXPECT_EQ((float)(uint8_scalar), (float)(uint8_val));
+  EXPECT_EQ((double)(uint8_scalar), (double)(uint8_val));
+  EXPECT_EQ((uint8_t)(very_big_int), (uint8_t)(very_big_int_val));
+
+  // fp16 scalar
+  EXPECT_EQ((uint8_t)(fp16_scalar), (uint8_t)(fp16_val));
+  EXPECT_EQ((int8_t)(fp16_scalar), (int8_t)(fp16_val));
+  EXPECT_EQ((uint32_t)(fp16_scalar), (uint32_t)(fp16_val));
+  EXPECT_EQ((uint64_t)(fp16_scalar), (uint64_t)(fp16_val));
+  EXPECT_EQ((int32_t)(fp16_scalar), (int32_t)(fp16_val));
+  EXPECT_EQ((int64_t)(fp16_scalar), (int64_t)(fp16_val));
+  EXPECT_EQ((float)(fp16_scalar), (float)(fp16_val));
+  EXPECT_EQ((double)(fp16_scalar), (double)(fp16_val));
+  EXPECT_EQ((fp16_t)(very_big_float), (fp16_t)(very_big_float_val));
+
+  // TODO: very small float underflow
+}
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
