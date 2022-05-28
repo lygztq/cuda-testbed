@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <variant>
 #include "tensor/fp16.h"
 #include "tensor/device.h"
 
@@ -130,6 +131,14 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
 
+#define DTYPE_SWITCH_FLOAT(dtype, ...)                   \
+  DataType _st = DataType(dtype);                               \
+  switch (_st) {                                                \
+    DTYPE_SWITCH_CASE(DataType::kHalf,   fp16_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
+    DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
+  }
+
 template <typename T>
 struct is_floatint_point {
   static constexpr bool value = false;
@@ -177,45 +186,36 @@ IS_UNSIGNED_INTEGRAL_CASE(uint64_t);
 
 class Scalar {
 public:
-  template <typename T, std::enable_if_t<is_floatint_point<T>::value>* = nullptr>
-  Scalar(T val) : dtype_(DataType::kDouble) {
-    double tmp = static_cast<double>(val);
-    val_ = *reinterpret_cast<uint64_t*>(&tmp);
+  template <typename T>
+  Scalar(T val) : val_(val) {}
+
+  template <typename T>
+  T To() const {
+    return std::visit([](auto&& arg) -> T {
+      return static_cast<T>(arg);
+    }, val_);
   }
 
-  template <typename T, std::enable_if_t<is_signed_integral<T>::value>* = nullptr>
-  Scalar(T val) : dtype_(DataType::kInt64) {
-    int64_t tmp = static_cast<int64_t>(val);
-    val_ = *reinterpret_cast<uint64_t*>(&tmp);
-  }
-
-  template <typename T, std::enable_if_t<is_unsigned_integral<T>::value>* = nullptr>
-  Scalar(T val) : dtype_(DataType::kUInt64), val_(static_cast<uint64_t>(val)) {}
-
-#define DECL_TYPE(type) \
+#define DEFINE_CAST(type) \
   operator type() const { \
-    type ret = 0; \
-    DTYPE_SWITCH(dtype_, [&ret, this](){ ret = static_cast<type>(*reinterpret_cast<const scalar_t*>(&this->val_)); }); \
-    return ret; \
+    return To<type>(); \
   }
 
-  DECL_TYPE(float)
-  DECL_TYPE(double)
-  DECL_TYPE(uint32_t)
-  DECL_TYPE(int32_t)
-  DECL_TYPE(uint64_t)
-  DECL_TYPE(int64_t)
-  DECL_TYPE(uint8_t)
-  DECL_TYPE(int8_t)
-#undef DECL_TYPE
-
-  DataType GetType() const {
-    return dtype_;
-  }
+DEFINE_CAST(float)
+DEFINE_CAST(double)
+DEFINE_CAST(int8_t)
+DEFINE_CAST(uint8_t)
+DEFINE_CAST(int32_t)
+DEFINE_CAST(uint32_t)
+DEFINE_CAST(int64_t)
+DEFINE_CAST(uint64_t)
 
 private:
-  DataType dtype_;
-  uint64_t val_;
+    std::variant<
+    int8_t, uint8_t,
+    int32_t, uint32_t,
+    int64_t, uint64_t,
+    fp16_t, float, double> val_;
 };
 
 } // namespace tensor
