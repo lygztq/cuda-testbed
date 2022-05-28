@@ -71,6 +71,7 @@ public:
   // destructor does not throw by default
   UTILS_NO_INLINE ~LogMessageFatal() noexcept(false) {
     throw GetEntry().Finalize();
+    abort();
   }
 private:
   struct Entry {
@@ -126,7 +127,7 @@ class LogMessageVoidify {
 
 #define CHECK(x)                                                \
   if (!(x))                                                     \
-    utils::LogMessageFatal(__FILE__, __LINE__).stream()    \
+    utils::LogMessageFatal(__FILE__, __LINE__).stream()         \
       << "Check failed: " #x << ":"
 #define CHECK_EQ(x, y) CHECK(x == y)
 #define CHECK_NE(x, y) CHECK(x != y)
