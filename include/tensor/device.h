@@ -62,6 +62,17 @@ struct Device final {
   TENSOR_DLL static void Transfer(
     const void* src, Device src_device, void* dst, Device dst_device, size_t size);
 
+  static void SetCurrentDevice(Device device) {
+    if (device.type != DeviceType::kCUDA || !device.Valid()) return;
+    CUDA_CALL(cudaSetDevice(device.id));
+  }
+
+  static Device GetCurrentCUDADevice() {
+    int ret = 0;
+    CUDA_CALL(cudaGetDevice(&ret));
+    return {DeviceType::kCUDA, ret};
+  }
+
   DeviceType type;
   int id;
 };

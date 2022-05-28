@@ -11,6 +11,7 @@ void CopyKernel(const Tensor& src, Tensor& dst) {
   CHECK_EQ(src.GetDataType(), dst.GetDataType());
   CHECK_EQ(src.GetDevice(), dst.GetDevice());
   CHECK_EQ(src.GetDevice().type, DeviceType::kCUDA);
+  Device::SetCurrentDevice(src.GetDevice());
 
   TensorIterator iter;
   iter.AddInput(src);
@@ -26,6 +27,7 @@ template <typename T, typename std::enable_if_t<support_crt_v<T>>*>
 void FillKernel(Tensor& tensor, T val) {
   T* dptr = tensor.TypedPtr<T>();
   constexpr size_t unroll = sizeof(T) >= 4 ? 2 : 4;
+  Device::SetCurrentDevice(tensor.GetDevice());
   FillKernelImpl<128, unroll>(tensor.NumElem(), dptr, val);
 }
 
@@ -37,6 +39,7 @@ template void FillKernel<uint64_t, nullptr>(Tensor& t, uint64_t val);
 void CastCopyKernel(const Tensor& src, Tensor& dst) {
   CHECK_EQ(src.GetDevice(), dst.GetDevice());
   CHECK_EQ(src.GetDevice().type, DeviceType::kCUDA);
+  Device::SetCurrentDevice(src.GetDevice());
 
   TensorIterator iter;
   iter.AddInput(src);

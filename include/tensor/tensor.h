@@ -257,7 +257,7 @@ private:
 
 // This reference is valid when the referred Tensor object is alive.
 // But this is not safe if the referred object is dead.
-class TENSOR_DLL TensorRef final {
+class TensorRef final {
   HAVE_SHAPE_INFO
 public:
   TensorRef() = default;
