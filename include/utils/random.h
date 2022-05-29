@@ -2,6 +2,7 @@
 #define UTILS_RANDOM_H_
 
 #include <random>
+#include "tensor/fp16.h"
 #include "utils/thread.h"
 #include "utils/singleton.h"
 #include "utils/logging.h"
@@ -69,6 +70,14 @@ public:
     return dist(gen_);
   }
 
+  template <>
+  fp16_t Uniform(fp16_t lower, fp16_t upper) {
+    float f_lower = static_cast<float>(lower), f_upper = static_cast<float>(upper);
+    CHECK_LE(f_lower, f_upper);
+    std::uniform_real_distribution<float> dist(f_lower, f_upper);
+    return static_cast<fp16_t>(dist(gen_));
+  }
+
   /*!
    * \brief Generate a random float from standard normal distribution
    */
@@ -84,6 +93,13 @@ public:
   T Normal(T mean, T stddev) {
     std::normal_distribution<T> dist(mean, stddev);
     return dist(gen_);
+  }
+
+  template <>
+  fp16_t Normal(fp16_t mean, fp16_t stddev) {
+    float f_mean = static_cast<float>(mean), f_stddev = static_cast<float>(stddev);
+    std::normal_distribution<float> dist(f_mean, f_stddev);
+    return static_cast<fp16_t>(dist(gen_));
   }
 
   static RandomEngine& ThreadLocal() {

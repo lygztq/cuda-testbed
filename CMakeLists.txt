@@ -51,13 +51,24 @@ endif (ENABLE_OPENMP)
 # use cuda
 include(CheckLanguage)
 check_language(CUDA)
+set(CMAKE_CUDA_RUNTIME_LIBRARY SHARED)
 message(STATUS "Use CUDA Compiler: ${CMAKE_CUDA_COMPILER_ID}:${CMAKE_CUDA_COMPILER_VERSION}")
+message(STATUS "CUDA Compiler Path: ${CMAKE_CUDA_COMPILER}")
+
+# find cuda path
+if(NOT CUDA_TOOLKIT_ROOT_DIR)
+get_filename_component(CUDA_TOOLKIT_ROOT_DIR "${CMAKE_CUDA_COMPILER}/../.." ABSOLUTE)
+endif()
+message(STATUS "CUDA ROOT Path: ${CUDA_TOOLKIT_ROOT_DIR}")
 
 enable_language(CUDA)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda") # enable lambda in cuda
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr") # enable constexpr expression in cuda
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_${CUDA_ARCHITECTURES}")
-message(STATUS "CUDA Computation Capability: ${CUDA_ARCH}")
+message(STATUS "Build with CUDA Computation Capability: ${CUDA_ARCHITECTURES}")
+
+# cuRAND
+include("${CMAKE_SOURCE_DIR}/cmake/modules/cuRAND.cmake")
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
   set(CMAKE_CUDA_STANDARD 17)

@@ -11,6 +11,7 @@
 #include "tensor/tensor.h"
 #include "tensor/iterator.h"
 #include "tensor/cuda_tools.cuh"
+#include "tensor/cuda_common.h"
 
 namespace tensor {
 namespace ops {
@@ -128,6 +129,8 @@ TENSOR_DLL void FillKernel(Tensor& tensor, T val);
  * \note This kernel is only valid on tensors with the same shape and stride.
  */
 TENSOR_DLL void CastCopyKernel(const Tensor& src, Tensor& dst);
+
+TENSOR_DLL void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high);
 
 } // namespace cuda
 } // namespace ops

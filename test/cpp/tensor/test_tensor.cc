@@ -185,3 +185,50 @@ TEST(TestTensor, TestView) {
   t.Transpose_(0, 2);
   EXPECT_ANY_THROW(t.View({-1}));
 }
+
+TEST(TestTensor, TestUniform) {
+  // cpu
+  std::vector<size_t> shape{2, 3, 4};
+  Tensor t_h_cpu = Tensor::Uniform(shape, 3., 6, DataType::kHalf);
+  fp16_t* d_h_cpu = t_h_cpu.TypedPtr<fp16_t>();
+  for (auto i = 0; i < t_h_cpu.NumElem(); ++i) {
+    EXPECT_GT(static_cast<float>(d_h_cpu[i]), 3.f);
+    EXPECT_LT(static_cast<float>(d_h_cpu[i]), 6.f);
+  }
+
+  Tensor t_f_cpu = Tensor::Uniform(shape, 3., 6, DataType::kFloat);
+  float* d_f_cpu = t_f_cpu.TypedPtr<float>();
+  for (auto i = 0; i < t_f_cpu.NumElem(); ++i) {
+    EXPECT_GT(d_f_cpu[i], 3.f);
+    EXPECT_LT(d_f_cpu[i], 6.f);
+  }
+
+  Tensor t_d_cpu = Tensor::Uniform(shape, 3.f, 6, DataType::kDouble);
+  double* d_d_cpu = t_d_cpu.TypedPtr<double>();
+  for (auto i = 0; i < t_d_cpu.NumElem(); ++i) {
+    EXPECT_GT(d_d_cpu[i], 3);
+    EXPECT_LT(d_d_cpu[i], 6);
+  }
+
+  // cuda
+  Tensor t_h_cuda = Tensor::Uniform(shape, 3., 6, DataType::kHalf, {DeviceType::kCUDA, 0});
+  fp16_t* d_h_cuda = t_h_cuda.Transfer({DeviceType::kCPU, 0}).TypedPtr<fp16_t>();
+  for (auto i = 0; i < t_h_cuda.NumElem(); ++i) {
+    EXPECT_GT(static_cast<float>(d_h_cuda[i]), 3.f);
+    EXPECT_LT(static_cast<float>(d_h_cuda[i]), 6.f);
+  }
+
+  Tensor t_f_cuda = Tensor::Uniform(shape, 3.f, 6.f, DataType::kFloat, {DeviceType::kCUDA, 0});
+  float* d_f_cuda = t_f_cuda.Transfer({DeviceType::kCPU, 0}).TypedPtr<float>();
+  for (auto i = 0; i < t_f_cuda.NumElem(); ++i) {
+    EXPECT_GT(d_f_cuda[i], 3.f);
+    EXPECT_LT(d_f_cuda[i], 6.f);
+  }
+
+  Tensor t_d_cuda = Tensor::Uniform(shape, 3., 6., DataType::kDouble, {DeviceType::kCUDA, 0});
+  double* d_d_cuda = t_d_cuda.Transfer({DeviceType::kCPU, 0}).TypedPtr<double>();
+  for (auto i = 0; i < t_d_cuda.NumElem(); ++i) {
+    EXPECT_GT(d_d_cuda[i], 3.);
+    EXPECT_LT(d_d_cuda[i], 6.);
+  }
+}

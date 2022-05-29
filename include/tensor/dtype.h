@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <variant>
+#include <cuda_fp16.h>
 #include "tensor/fp16.h"
 #include "tensor/device.h"
 
@@ -118,6 +119,20 @@ inline size_t DataTypeSize(DataType dtype) {
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
 
+#define DTYPE_SWITCH_CUDA_HALF(dtype, ...)                      \
+  DataType _st = DataType(dtype);                               \
+  switch (_st) {                                                \
+    DTYPE_SWITCH_CASE(DataType::kInt8,   int8_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kUInt8,  uint8_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kInt32,  int32_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt32, uint32_t, __VA_ARGS__) \
+    DTYPE_SWITCH_CASE(DataType::kInt64,  int64_t, __VA_ARGS__)  \
+    DTYPE_SWITCH_CASE(DataType::kUInt64, uint64_t, __VA_ARGS__) \
+    DTYPE_SWITCH_CASE(DataType::kHalf,   __half, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
+    DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
+  }
+
 #define DTYPE_SWITCH_WITHOUT_HALF(dtype, ...)                   \
   DataType _st = DataType(dtype);                               \
   switch (_st) {                                                \
@@ -135,6 +150,13 @@ inline size_t DataTypeSize(DataType dtype) {
   DataType _st = DataType(dtype);                               \
   switch (_st) {                                                \
     DTYPE_SWITCH_CASE(DataType::kHalf,   fp16_t, __VA_ARGS__)   \
+    DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
+    DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
+  }
+
+#define DTYPE_SWITCH_FLOAT_WITHOUT_HALF(dtype, ...)             \
+  DataType _st = DataType(dtype);                               \
+  switch (_st) {                                                \
     DTYPE_SWITCH_CASE(DataType::kFloat,  float, __VA_ARGS__)    \
     DTYPE_SWITCH_CASE(DataType::kDouble, double, __VA_ARGS__)   \
   }
@@ -185,7 +207,14 @@ IS_UNSIGNED_INTEGRAL_CASE(uint64_t);
 #undef IS_UNSIGNED_INTEGRAL_CASE
 
 class Scalar {
+  using ValueType = std::variant<
+    int8_t, uint8_t,
+    int32_t, uint32_t,
+    int64_t, uint64_t,
+    fp16_t, float, double>;
 public:
+  Scalar() = default;
+
   template <typename T>
   Scalar(T val) : val_(val) {}
 
@@ -211,11 +240,7 @@ DEFINE_CAST(int64_t)
 DEFINE_CAST(uint64_t)
 
 private:
-    std::variant<
-    int8_t, uint8_t,
-    int32_t, uint32_t,
-    int64_t, uint64_t,
-    fp16_t, float, double> val_;
+    ValueType val_;
 };
 
 } // namespace tensor

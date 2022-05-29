@@ -8,21 +8,7 @@
 #include <string>
 #include <cuda_runtime.h>
 #include "utils/logging.h"
-#include "tensor/macros.h"
-
-#define CUDA_CALL(func)                                            \
-  {                                                                \
-    cudaError_t e = (func);                                        \
-    CHECK(e == cudaSuccess || e == cudaErrorCudartUnloading)       \
-        << "CUDA: " << cudaGetErrorString(e);                      \
-  }
-
-#define CUDA_CALL_WITH_ERROR_VAR(func, e)                          \
-  {                                                                \
-    e = (func);                                                    \
-    CHECK(e == cudaSuccess || e == cudaErrorCudartUnloading)       \
-        << "CUDA: " << cudaGetErrorString(e);                      \
-  }
+#include "tensor/cuda_common.h"
 
 namespace tensor {
 

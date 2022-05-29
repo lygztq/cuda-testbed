@@ -69,6 +69,7 @@ void RandomUniformKernelImpl<fp16_t>(Tensor& tensor, fp16_t low, fp16_t high) {
 }
 
 void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high) {
+  CHECK_EQ(tensor.GetDevice().type, DeviceType::kCPU);
   DTYPE_SWITCH_FLOAT(tensor.GetDataType(), [&](){
     RandomUniformKernelImpl<scalar_t>(tensor, static_cast<scalar_t>(low), static_cast<scalar_t>(high));
   })

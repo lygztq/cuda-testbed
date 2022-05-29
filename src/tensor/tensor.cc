@@ -281,6 +281,7 @@ Tensor Tensor::Uniform(const std::vector<size_t>& shape,
       ops::cpu::RandomUniformKernel(new_tensor, low, high);
       break;
     case DeviceType::kCUDA:
+      ops::cuda::RandomUniformKernel(new_tensor, low, high);
       break;
     default:
       LOG_ERROR << "unknown device type\n";

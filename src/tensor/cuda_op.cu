@@ -18,6 +18,7 @@ void CopyKernel(const Tensor& src, Tensor& dst) {
   iter.AddOutput(dst);
   iter.Build();
 
+  // TODO: change this to DTYPE_SWITCH_CUDA?
   DTYPE_SWITCH(src.GetDataType(), [&](){
     CUDAElemwiseKernel(iter, [] CUDA_LAMBDA (scalar_t elem) { return elem; });
   });
@@ -52,6 +53,62 @@ void CastCopyKernel(const Tensor& src, Tensor& dst) {
       CUDAElemwiseKernel(iter, [] CUDA_LAMBDA (scalar_t elem) -> dst_t { return dtype_cast<scalar_t, dst_t, DeviceType::kCUDA>::cast(elem); });
     });
   });
+}
+
+template <typename T>
+void RandomUniformKernelImpl(Tensor& tensor, T low, T high) {
+  T* data = tensor.TypedPtr<T>();
+  size_t num_elem = tensor.NumElem();
+  auto gen = CUDAThreadLocalHandles::ThreadLocal().curand_gen;
+  curandGenerateUniform(gen, data, num_elem);
+
+  T scale = high - low;
+  T bias = low;
+  
+  TensorIterator iter;
+  iter.AddInput(tensor);
+  iter.AddOutput(tensor);
+  iter.Build();
+
+  CUDAContiguousKernel(
+    iter,
+    [=] CUDA_LAMBDA (T elem) { return scale * elem + bias; });
+}
+
+template <>
+void RandomUniformKernelImpl<double>(Tensor& tensor, double low, double high) {
+  double* data = tensor.TypedPtr<double>();
+  size_t num_elem = tensor.NumElem();
+  auto gen = CUDAThreadLocalHandles::ThreadLocal().curand_gen;
+  curandGenerateUniformDouble(gen, data, num_elem);
+
+  double scale = high - low;
+  double bias = low;
+  
+  TensorIterator iter;
+  iter.AddInput(tensor);
+  iter.AddOutput(tensor);
+  iter.Build();
+
+  CUDAContiguousKernel(
+    iter,
+    [=] CUDA_LAMBDA (double elem) { return scale * elem + bias; });
+}
+
+void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high) {
+  CHECK_EQ(tensor.GetDevice().type, DeviceType::kCUDA);
+  Device::SetCurrentDevice(tensor.GetDevice());
+
+  if (tensor.GetDataType() == DataType::kHalf) {
+    Tensor single_tensor = Tensor::SameAs(tensor, false, tensor.GetDevice(), DataType::kFloat);
+    RandomUniformKernel(single_tensor, low, high);
+    CastCopyKernel(single_tensor, tensor);
+  } else {
+    DTYPE_SWITCH_FLOAT_WITHOUT_HALF(tensor.GetDataType(), [&](){
+      RandomUniformKernelImpl<scalar_t>(
+        tensor, static_cast<scalar_t>(low), static_cast<scalar_t>(high));
+    });
+  }
 }
 
 } // namespace cuda

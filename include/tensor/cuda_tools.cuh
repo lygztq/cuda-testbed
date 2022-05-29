@@ -12,6 +12,7 @@
 #include <cuda_fp16.h>
 #include "tensor/common.h"
 #include "tensor/macros.h"
+#include "tensor/cuda_common.h"
 
 namespace tensor {
 namespace ops {

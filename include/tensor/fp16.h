@@ -15,6 +15,16 @@ struct Half {
     : bits(fp16_ieee_from_fp32_value(f)) {}
   operator float() const { return fp16_ieee_to_fp32_value(bits); }
 
+#define DEFINE_BINARY_OP(op) \
+  Half operator op(Half other) const { \
+    return static_cast<float>(*this) op static_cast<float>(other); \
+  }
+
+  DEFINE_BINARY_OP(+)
+  DEFINE_BINARY_OP(-)
+  DEFINE_BINARY_OP(*)
+  DEFINE_BINARY_OP(/)
+
   static Half FromHex(uint16_t b) {
     Half h;
     h.bits = b;
