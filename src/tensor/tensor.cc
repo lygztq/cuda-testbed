@@ -290,6 +290,29 @@ Tensor Tensor::Uniform(const std::vector<size_t>& shape,
   return new_tensor; 
 }
 
+Tensor Tensor::Normal(const std::vector<size_t>& shape,
+                      Scalar mean,
+                      Scalar stddev,
+                      DataType dtype,
+                      Device device) {
+  CHECK(dtype == DataType::kDouble ||
+        dtype == DataType::kFloat ||
+        dtype == DataType::kHalf) << "Only floating point type is supported.\n";
+  Tensor new_tensor = Tensor::Empty(shape, dtype, 0, device);
+  switch (device.type) {
+    case DeviceType::kCPU:
+      ops::cpu::RandomNormalKernel(new_tensor, mean, stddev);
+      break;
+    case DeviceType::kCUDA:
+      ops::cuda::RandomNormalKernel(new_tensor, mean, stddev);
+      break;
+    default:
+      LOG_ERROR << "unknown device type\n";
+      break;
+  }
+  return new_tensor; 
+}
+
 Tensor Tensor::Ones(const std::vector<size_t>& shape,
                     DataType dtype,
                     Device device) {

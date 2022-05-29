@@ -50,7 +50,11 @@ void CastCopyKernel(const Tensor& src, Tensor& dst) {
   DTYPE_SWITCH(dst.GetDataType(), [&](){
     using dst_t = scalar_t;
     DTYPE_SWITCH(src.GetDataType(), [&](){
-      CUDAElemwiseKernel(iter, [] CUDA_LAMBDA (scalar_t elem) -> dst_t { return dtype_cast<scalar_t, dst_t, DeviceType::kCUDA>::cast(elem); });
+      CUDAElemwiseKernel(
+        iter,
+        [] CUDA_LAMBDA (scalar_t elem) -> dst_t {
+          return dtype_cast<scalar_t, dst_t, DeviceType::kCUDA>::cast(elem);
+        });
     });
   });
 }
@@ -107,6 +111,38 @@ void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high) {
     DTYPE_SWITCH_FLOAT_WITHOUT_HALF(tensor.GetDataType(), [&](){
       RandomUniformKernelImpl<scalar_t>(
         tensor, static_cast<scalar_t>(low), static_cast<scalar_t>(high));
+    });
+  }
+}
+
+template <typename T>
+void RandomNormalKernelImpl(Tensor& tensor, T mean, T stddev) {
+  T* data = tensor.TypedPtr<T>();
+  size_t num_elem = tensor.NumElem();
+  auto gen = CUDAThreadLocalHandles::ThreadLocal().curand_gen;
+  curandGenerateNormal(gen, data, num_elem, mean, stddev);
+}
+
+template <>
+void RandomNormalKernelImpl<double>(Tensor& tensor, double mean, double stddev) {
+  double* data = tensor.TypedPtr<double>();
+  size_t num_elem = tensor.NumElem();
+  auto gen = CUDAThreadLocalHandles::ThreadLocal().curand_gen;
+  curandGenerateNormalDouble(gen, data, num_elem, mean, stddev);
+}
+
+void RandomNormalKernel(Tensor& tensor, Scalar mean, Scalar stddev) {
+  CHECK_EQ(tensor.GetDevice().type, DeviceType::kCUDA);
+  Device::SetCurrentDevice(tensor.GetDevice());
+
+  if (tensor.GetDataType() == DataType::kHalf) {
+    Tensor single_tensor = Tensor::SameAs(tensor, false, tensor.GetDevice(), DataType::kFloat);
+    RandomNormalKernel(single_tensor, mean, stddev);
+    CastCopyKernel(single_tensor, tensor);
+  } else {
+    DTYPE_SWITCH_FLOAT_WITHOUT_HALF(tensor.GetDataType(), [&](){
+      RandomNormalKernelImpl<scalar_t>(
+        tensor, static_cast<scalar_t>(mean), static_cast<scalar_t>(stddev));
     });
   }
 }

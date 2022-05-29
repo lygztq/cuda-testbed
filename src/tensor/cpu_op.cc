@@ -68,10 +68,39 @@ void RandomUniformKernelImpl<fp16_t>(Tensor& tensor, fp16_t low, fp16_t high) {
   }
 }
 
+template <typename T, typename std::enable_if_t<support_crt_v<T>>* = nullptr>
+void RandomNormalKernelImpl(Tensor& tensor, T mean, T stddev) {
+  T* dptr = tensor.TypedPtr<T>();
+  size_t num_elem = tensor.NumElem();
+  auto& generator = utils::RandomEngine::ThreadLocal();
+
+  for (size_t i = 0; i < num_elem; ++i) {
+    dptr[i] = generator.Normal<T>(mean, stddev);
+  }
+}
+
+template <>
+void RandomNormalKernelImpl<fp16_t>(Tensor& tensor, fp16_t mean, fp16_t stddev) {
+  fp16_t* dptr = tensor.TypedPtr<fp16_t>();
+  size_t num_elem = tensor.NumElem();
+  auto& generator = utils::RandomEngine::ThreadLocal();
+
+  for (size_t i = 0; i < num_elem; ++i) {
+    dptr[i] = static_cast<fp16_t>(generator.Normal<float>(static_cast<float>(mean), static_cast<float>(stddev)));
+  }
+}
+
 void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high) {
   CHECK_EQ(tensor.GetDevice().type, DeviceType::kCPU);
   DTYPE_SWITCH_FLOAT(tensor.GetDataType(), [&](){
     RandomUniformKernelImpl<scalar_t>(tensor, static_cast<scalar_t>(low), static_cast<scalar_t>(high));
+  })
+}
+
+void RandomNormalKernel(Tensor& tensor, Scalar mean, Scalar stddev) {
+  CHECK_EQ(tensor.GetDevice().type, DeviceType::kCPU);
+  DTYPE_SWITCH_FLOAT(tensor.GetDataType(), [&](){
+    RandomNormalKernelImpl<scalar_t>(tensor, static_cast<scalar_t>(mean), static_cast<scalar_t>(stddev));
   })
 }
 

@@ -232,3 +232,16 @@ TEST(TestTensor, TestUniform) {
     EXPECT_LT(d_d_cuda[i], 6.);
   }
 }
+
+TEST(TestTensor, TestNormal) {
+  // cpu
+  std::vector<size_t> shape{2, 3, 4};
+  Tensor t_h_cpu = Tensor::Normal(shape, 3., 6, DataType::kHalf);
+  Tensor t_f_cpu = Tensor::Normal(shape, 3., 6, DataType::kFloat);
+  Tensor t_d_cpu = Tensor::Normal(shape, 3.f, 6, DataType::kDouble);
+
+  // cuda
+  Tensor t_h_cuda = Tensor::Normal(shape, 3., 6, DataType::kHalf, {DeviceType::kCUDA, 0});
+  Tensor t_f_cuda = Tensor::Normal(shape, 3.f, 6.f, DataType::kFloat, {DeviceType::kCUDA, 0});
+  Tensor t_d_cuda = Tensor::Normal(shape, 3., 6., DataType::kDouble, {DeviceType::kCUDA, 0});
+}

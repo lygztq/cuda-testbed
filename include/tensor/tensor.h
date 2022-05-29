@@ -227,10 +227,17 @@ public:
                                  Device device = Device::DefaultDevice());
 
   TENSOR_DLL static Tensor Uniform(const std::vector<size_t>& shape,
-                                   Scalar low,
-                                   Scalar high,
+                                   Scalar low = Scalar(0),
+                                   Scalar high = Scalar(1),
                                    DataType dtype = DataType::kDouble,
                                    Device device = Device::DefaultDevice());
+
+  /*! \brief random normal distribution */
+  TENSOR_DLL static Tensor Normal(const std::vector<size_t>& shape,
+                                  Scalar mean = Scalar(0),
+                                  Scalar stddev = Scalar(1),
+                                  DataType dtype = DataType::kDouble,
+                                  Device device = Device::DefaultDevice());
 
   TENSOR_DLL static Tensor Ones(const std::vector<size_t>& shape,
                                 DataType dtype,

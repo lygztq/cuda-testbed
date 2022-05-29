@@ -132,6 +132,8 @@ TENSOR_DLL void CastCopyKernel(const Tensor& src, Tensor& dst);
 
 TENSOR_DLL void RandomUniformKernel(Tensor& tensor, Scalar low, Scalar high);
 
+TENSOR_DLL void RandomNormalKernel(Tensor& tensor, Scalar mean, Scalar stddev);
+
 } // namespace cuda
 } // namespace ops
 } // namespace tensor
